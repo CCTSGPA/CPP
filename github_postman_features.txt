@@ -1,0 +1,756 @@
+# Postman Features for CivicWatch API
+
+This document outlines the use of Postman for API development and testing in the CivicWatch project.
+
+## 1. Why Postman?
+
+Postman is a powerful API development and testing platform chosen for its:
+
+- **User-Friendly Interface:** Intuitive UI for sending requests, inspecting responses, and managing collections.
+- **Request Building:** Easily construct HTTP requests with various methods (GET, POST, PUT, DELETE), headers, and body data.
+- **Environment Variables:** Store and manage API keys, base URLs, and other variables for reuse across requests.
+- **Collections:** Organize related requests into folders for better organization and sharing.
+- **Tests:** Write JavaScript tests to validate API responses, ensuring functionality and data integrity.
+- **Mock Servers:** Simulate API endpoints for development and testing without a live backend.
+- **Documentation Generation:** Automatically generate API documentation from your requests and responses.
+
+## 2. Key Features Implemented
+
+- **API Request Templates:** Pre-built request templates for common CivicWatch API endpoints (e.g., submitting complaints, retrieving complaints, updating status).
+- **Environment Variables:**  Configured environment variables for:
+    - Base URL (e.g., `http://localhost:8080/api/v1`)
+    - Authentication tokens (JWT)
+    - Twilio/SendGrid API keys (for notifications)
+- **Request Collections:** Organized collections for:
+    - Complaint Management
+    - User Authentication
+    - Notifications
+    - File Upload
+- **Tests:** Basic tests for:
+    - Verifying successful complaint submission
+    - Checking response status codes
+    - Validating response data structure
+
+## 3. Practical Usage Instructions
+
+1. **Installation:** Download and install Postman from [https://www.postman.com/](https://www.postman.com/).
+2. **Import Collection:** Import the `CivicWatch API.postman_collection.json` file from the project repository.
+3. **Configure Environment:** Set environment variables in Postman:
+   - `BASE_URL`: Your API base URL (e.g., `http://localhost:8080/api/v1`)
+   - `JWT_TOKEN`: Your authentication token (obtained from login)
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`: Twilio credentials (if using notifications)
+   - `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME`: SendGrid credentials (if using notifications)
+4. **Send Requests:** Select a request from the collection and click "Send" to execute it. View the response in the "Response" tab.
+5. **Run Tests:** Click the "Tests" tab and run the tests associated with a request to verify its functionality.
+
+## 4. Testing Methodology
+
+- **Unit Tests:** Focus on individual API endpoints and their expected behavior.
+- **Integration Tests:** Test interactions between multiple endpoints and services (e.g., submitting a complaint and verifying notification).
+- **End-to-End Tests:** Simulate real-world user scenarios, covering the entire workflow from complaint submission to resolution.
+
+## 5. Benefits to the Project
+
+- **Improved Development Efficiency:** Streamlined API development and testing process.
+- **Enhanced Collaboration:** Share API requests and collections with team members for better collaboration.
+- **Increased Reliability:** Automated tests ensure API functionality and data integrity.
+- **Better Documentation:** Automatically generated API documentation for developers and stakeholders.
+
+## Future Enhancements
+
+- **Expand Test Coverage:** Add more comprehensive tests for edge cases and error scenarios.
+- **Integrate with CI/CD Pipeline:** Run Postman tests as part of the continuous integration and deployment process.
+- **Explore Postman Pro Features:** Utilize advanced features like monitoring, mock servers, and API documentation generation.
+# Postman Features for CivicWatch API
+
+This document outlines the use of Postman for API development and testing in the CivicWatch project.
+
+## 1. Why Postman?
+
+Postman is a powerful API development and testing platform chosen for its:
+
+- **User-Friendly Interface:** Intuitive UI for sending requests, inspecting responses, and managing collections.
+- **Request Building:** Easily construct HTTP requests with various methods (GET, POST, PUT, DELETE), headers, and body data.
+- **Environment Variables:** Store and manage API keys, base URLs, and other variables for reuse across requests.
+- **Collections:** Organize related requests into folders for better organization and sharing.
+- **Tests:** Write JavaScript tests to validate API responses, ensuring functionality and data integrity.
+- **Mock Servers:** Simulate API endpoints for development and testing without a live backend.
+- **Documentation Generation:** Automatically generate API documentation from your requests and responses.
+
+## 2. Key Features Implemented
+
+- **API Request Templates:** Pre-built request templates for common CivicWatch API endpoints (e.g., submitting complaints, retrieving complaints, updating status).
+- **Environment Variables:**  Configured environment variables for:
+    - Base URL (e.g., `http://localhost:8080/api/v1`)
+    - Authentication tokens (JWT)
+    - Twilio/SendGrid API keys (for notifications)
+- **Request Collections:** Organized collections for:
+    - Complaint Management
+    - User Authentication
+    - Notifications
+    - File Upload
+- **Tests:** Basic tests for:
+    - Verifying successful complaint submission
+    - Checking response status codes
+    - Validating response data structure
+
+## 3. Practical Usage Instructions
+
+1. **Installation:** Download and install Postman from [https://www.postman.com/](https://www.postman.com/).
+2. **Import Collection:** Import the `CivicWatch API.postman_collection.json` file from the project repository.
+3. **Configure Environment:** Set environment variables in Postman:
+   - `BASE_URL`: Your API base URL (e.g., `http://localhost:8080/api/v1`)
+   - `JWT_TOKEN`: Your authentication token (obtained from login)
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`: Twilio credentials (if using notifications)
+   - `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME`: SendGrid credentials (if using notifications)
+4. **Send Requests:** Select a request from the collection and click "Send" to execute it. View the response in the "Response" tab.
+5. **Run Tests:** Click the "Tests" tab and run the tests associated with a request to verify its functionality.
+
+## 4. Testing Methodology
+
+- **Unit Tests:** Focus on individual API endpoints and their expected behavior.
+- **Integration Tests:** Test interactions between multiple endpoints and services (e.g., submitting a complaint and verifying notification).
+- **End-to-End Tests:** Simulate real-world user scenarios, covering the entire workflow from complaint submission to resolution.
+
+## 5. Benefits to the Project
+
+- **Improved Development Efficiency:** Streamlined API development and testing process.
+- **Enhanced Collaboration:** Share API requests and collections with team members for better collaboration.
+- **Increased Reliability:** Automated tests ensure API functionality and data integrity.
+- **Better Documentation:** Automatically generated API documentation for developers and stakeholders.
+
+## Future Enhancements
+
+- **Expand Test Coverage:** Add more comprehensive tests for edge cases and error scenarios.
+- **Integrate with CI/CD Pipeline:** Run Postman tests as part of the continuous integration and deployment process.
+- **Explore Postman Pro Features:** Utilize advanced features like monitoring, mock servers, and API documentation generation.
+# Postman Features for CivicWatch API
+
+This document outlines the use of Postman for API development and testing in the CivicWatch project.
+
+## 1. Why Postman?
+
+Postman is a powerful API development and testing platform chosen for its:
+
+- **User-Friendly Interface:** Intuitive UI for sending requests, inspecting responses, and managing collections.
+- **Request Building:** Easily construct HTTP requests with various methods (GET, POST, PUT, DELETE), headers, and body data.
+- **Environment Variables:** Store and manage API keys, base URLs, and other variables for reuse across requests.
+- **Collections:** Organize related requests into folders for better organization and sharing.
+- **Tests:** Write JavaScript tests to validate API responses, ensuring functionality and data integrity.
+- **Mock Servers:** Simulate API endpoints for development and testing without a live backend.
+- **Documentation Generation:** Automatically generate API documentation from your requests and responses.
+
+## 2. Key Features Implemented
+
+- **API Request Templates:** Pre-built request templates for common CivicWatch API endpoints (e.g., submitting complaints, retrieving complaints, updating status).
+- **Environment Variables:**  Configured environment variables for:
+    - Base URL (e.g., `http://localhost:8080/api/v1`)
+    - Authentication tokens (JWT)
+    - Twilio/SendGrid API keys (for notifications)
+- **Request Collections:** Organized collections for:
+    - Complaint Management
+    - User Authentication
+    - Notifications
+    - File Upload
+- **Tests:** Basic tests for:
+    - Verifying successful complaint submission
+    - Checking response status codes
+    - Validating response data structure
+
+## 3. Practical Usage Instructions
+
+1. **Installation:** Download and install Postman from [https://www.postman.com/](https://www.postman.com/).
+2. **Import Collection:** Import the `CivicWatch API.postman_collection.json` file from the project repository.
+3. **Configure Environment:** Set environment variables in Postman:
+   - `BASE_URL`: Your API base URL (e.g., `http://localhost:8080/api/v1`)
+   - `JWT_TOKEN`: Your authentication token (obtained from login)
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`: Twilio credentials (if using notifications)
+   - `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME`: SendGrid credentials (if using notifications)
+4. **Send Requests:** Select a request from the collection and click "Send" to execute it. View the response in the "Response" tab.
+5. **Run Tests:** Click the "Tests" tab and run the tests associated with a request to verify its functionality.
+
+## 4. Testing Methodology
+
+- **Unit Tests:** Focus on individual API endpoints and their expected behavior.
+- **Integration Tests:** Test interactions between multiple endpoints and services (e.g., submitting a complaint and verifying notification).
+- **End-to-End Tests:** Simulate real-world user scenarios, covering the entire workflow from complaint submission to resolution.
+
+## 5. Benefits to the Project
+
+- **Improved Development Efficiency:** Streamlined API development and testing process.
+- **Enhanced Collaboration:** Share API requests and collections with team members for better collaboration.
+- **Increased Reliability:** Automated tests ensure API functionality and data integrity.
+- **Better Documentation:** Automatically generated API documentation for developers and stakeholders.
+
+## Future Enhancements
+
+- **Expand Test Coverage:** Add more comprehensive tests for edge cases and error scenarios.
+- **Integrate with CI/CD Pipeline:** Run Postman tests as part of the continuous integration and deployment process.
+- **Explore Postman Pro Features:** Utilize advanced features like monitoring, mock servers, and API documentation generation.
+# Postman Features for CivicWatch API
+
+This document outlines the use of Postman for API development and testing in the CivicWatch project.
+
+## 1. Why Postman?
+
+Postman is a powerful API development and testing platform chosen for its:
+
+- **User-Friendly Interface:** Intuitive UI for sending requests, inspecting responses, and managing collections.
+- **Request Building:** Easily construct HTTP requests with various methods (GET, POST, PUT, DELETE), headers, and body data.
+- **Environment Variables:** Store and manage API keys, base URLs, and other variables for reuse across requests.
+- **Collections:** Organize related requests into folders for better organization and sharing.
+- **Tests:** Write JavaScript tests to validate API responses, ensuring functionality and data integrity.
+- **Mock Servers:** Simulate API endpoints for development and testing without a live backend.
+- **Documentation Generation:** Automatically generate API documentation from your requests and responses.
+
+## 2. Key Features Implemented
+
+- **API Request Templates:** Pre-built request templates for common CivicWatch API endpoints (e.g., submitting complaints, retrieving complaints, updating status).
+- **Environment Variables:**  Configured environment variables for:
+    - Base URL (e.g., `http://localhost:8080/api/v1`)
+    - Authentication tokens (JWT)
+    - Twilio/SendGrid API keys (for notifications)
+- **Request Collections:** Organized collections for:
+    - Complaint Management
+    - User Authentication
+    - Notifications
+    - File Upload
+- **Tests:** Basic tests for:
+    - Verifying successful complaint submission
+    - Checking response status codes
+    - Validating response data structure
+
+## 3. Practical Usage Instructions
+
+1. **Installation:** Download and install Postman from [https://www.postman.com/](https://www.postman.com/).
+2. **Import Collection:** Import the `CivicWatch API.postman_collection.json` file from the project repository.
+3. **Configure Environment:** Set environment variables in Postman:
+   - `BASE_URL`: Your API base URL (e.g., `http://localhost:8080/api/v1`)
+   - `JWT_TOKEN`: Your authentication token (obtained from login)
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`: Twilio credentials (if using notifications)
+   - `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME`: SendGrid credentials (if using notifications)
+4. **Send Requests:** Select a request from the collection and click "Send" to execute it. View the response in the "Response" tab.
+5. **Run Tests:** Click the "Tests" tab and run the tests associated with a request to verify its functionality.
+
+## 4. Testing Methodology
+
+- **Unit Tests:** Focus on individual API endpoints and their expected behavior.
+- **Integration Tests:** Test interactions between multiple endpoints and services (e.g., submitting a complaint and verifying notification).
+- **End-to-End Tests:** Simulate real-world user scenarios, covering the entire workflow from complaint submission to resolution.
+
+## 5. Benefits to the Project
+
+- **Improved Development Efficiency:** Streamlined API development and testing process.
+- **Enhanced Collaboration:** Share API requests and collections with team members for better collaboration.
+- **Increased Reliability:** Automated tests ensure API functionality and data integrity.
+- **Better Documentation:** Automatically generated API documentation for developers and stakeholders.
+
+## Future Enhancements
+
+- **Expand Test Coverage:** Add more comprehensive tests for edge cases and error scenarios.
+- **Integrate with CI/CD Pipeline:** Run Postman tests as part of the continuous integration and deployment process.
+- **Explore Postman Pro Features:** Utilize advanced features like monitoring, mock servers, and API documentation generation.
+# Postman Features for CivicWatch API
+
+This document outlines the use of Postman for API development and testing in the CivicWatch project.
+
+## 1. Why Postman?
+
+Postman is a powerful API development and testing platform chosen for its:
+
+- **User-Friendly Interface:** Intuitive UI for sending requests, inspecting responses, and managing collections.
+- **Request Building:** Easily construct HTTP requests with various methods (GET, POST, PUT, DELETE), headers, and body data.
+- **Environment Variables:** Store and manage API keys, base URLs, and other variables for reuse across requests.
+- **Collections:** Organize related requests into folders for better organization and sharing.
+- **Tests:** Write JavaScript tests to validate API responses, ensuring functionality and data integrity.
+- **Mock Servers:** Simulate API endpoints for development and testing without a live backend.
+- **Documentation Generation:** Automatically generate API documentation from your requests and responses.
+
+## 2. Key Features Implemented
+
+- **API Request Templates:** Pre-built request templates for common CivicWatch API endpoints (e.g., submitting complaints, retrieving complaints, updating status).
+- **Environment Variables:**  Configured environment variables for:
+    - Base URL (e.g., `http://localhost:8080/api/v1`)
+    - Authentication tokens (JWT)
+    - Twilio/SendGrid API keys (for notifications)
+- **Request Collections:** Organized collections for:
+    - Complaint Management
+    - User Authentication
+    - Notifications
+    - File Upload
+- **Tests:** Basic tests for:
+    - Verifying successful complaint submission
+    - Checking response status codes
+    - Validating response data structure
+
+## 3. Practical Usage Instructions
+
+1. **Installation:** Download and install Postman from [https://www.postman.com/](https://www.postman.com/).
+2. **Import Collection:** Import the `CivicWatch API.postman_collection.json` file from the project repository.
+3. **Configure Environment:** Set environment variables in Postman:
+   - `BASE_URL`: Your API base URL (e.g., `http://localhost:8080/api/v1`)
+   - `JWT_TOKEN`: Your authentication token (obtained from login)
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`: Twilio credentials (if using notifications)
+   - `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME`: SendGrid credentials (if using notifications)
+4. **Send Requests:** Select a request from the collection and click "Send" to execute it. View the response in the "Response" tab.
+5. **Run Tests:** Click the "Tests" tab and run the tests associated with a request to verify its functionality.
+
+## 4. Testing Methodology
+
+- **Unit Tests:** Focus on individual API endpoints and their expected behavior.
+- **Integration Tests:** Test interactions between multiple endpoints and services (e.g., submitting a complaint and verifying notification).
+- **End-to-End Tests:** Simulate real-world user scenarios, covering the entire workflow from complaint submission to resolution.
+
+## 5. Benefits to the Project
+
+- **Improved Development Efficiency:** Streamlined API development and testing process.
+- **Enhanced Collaboration:** Share API requests and collections with team members for better collaboration.
+- **Increased Reliability:** Automated tests ensure API functionality and data integrity.
+- **Better Documentation:** Automatically generated API documentation for developers and stakeholders.
+
+## Future Enhancements
+
+- **Expand Test Coverage:** Add more comprehensive tests for edge cases and error scenarios.
+- **Integrate with CI/CD Pipeline:** Run Postman tests as part of the continuous integration and deployment process.
+- **Explore Postman Pro Features:** Utilize advanced features like monitoring, mock servers, and API documentation generation.
+# Postman Features for CivicWatch API
+
+This document outlines the use of Postman for API development and testing in the CivicWatch project.
+
+## 1. Why Postman?
+
+Postman is a powerful API development and testing platform chosen for its:
+
+- **User-Friendly Interface:** Intuitive UI for sending requests, inspecting responses, and managing collections.
+- **Request Building:** Easily construct HTTP requests with various methods (GET, POST, PUT, DELETE), headers, and body data.
+- **Environment Variables:** Store and manage API keys, base URLs, and other variables for reuse across requests.
+- **Collections:** Organize related requests into folders for better organization and sharing.
+- **Tests:** Write JavaScript tests to validate API responses, ensuring functionality and data integrity.
+- **Mock Servers:** Simulate API endpoints for development and testing without a live backend.
+- **Documentation Generation:** Automatically generate API documentation from your requests and responses.
+
+## 2. Key Features Implemented
+
+- **API Request Templates:** Pre-built request templates for common CivicWatch API endpoints (e.g., submitting complaints, retrieving complaints, updating status).
+- **Environment Variables:**  Configured environment variables for:
+    - Base URL (e.g., `http://localhost:8080/api/v1`)
+    - Authentication tokens (JWT)
+    - Twilio/SendGrid API keys (for notifications)
+- **Request Collections:** Organized collections for:
+    - Complaint Management
+    - User Authentication
+    - Notifications
+    - File Upload
+- **Tests:** Basic tests for:
+    - Verifying successful complaint submission
+    - Checking response status codes
+    - Validating response data structure
+
+## 3. Practical Usage Instructions
+
+1. **Installation:** Download and install Postman from [https://www.postman.com/](https://www.postman.com/).
+2. **Import Collection:** Import the `CivicWatch API.postman_collection.json` file from the project repository.
+3. **Configure Environment:** Set environment variables in Postman:
+   - `BASE_URL`: Your API base URL (e.g., `http://localhost:8080/api/v1`)
+   - `JWT_TOKEN`: Your authentication token (obtained from login)
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`: Twilio credentials (if using notifications)
+   - `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME`: SendGrid credentials (if using notifications)
+4. **Send Requests:** Select a request from the collection and click "Send" to execute it. View the response in the "Response" tab.
+5. **Run Tests:** Click the "Tests" tab and run the tests associated with a request to verify its functionality.
+
+## 4. Testing Methodology
+
+- **Unit Tests:** Focus on individual API endpoints and their expected behavior.
+- **Integration Tests:** Test interactions between multiple endpoints and services (e.g., submitting a complaint and verifying notification).
+- **End-to-End Tests:** Simulate real-world user scenarios, covering the entire workflow from complaint submission to resolution.
+
+## 5. Benefits to the Project
+
+- **Improved Development Efficiency:** Streamlined API development and testing process.
+- **Enhanced Collaboration:** Share API requests and collections with team members for better collaboration.
+- **Increased Reliability:** Automated tests ensure API functionality and data integrity.
+- **Better Documentation:** Automatically generated API documentation for developers and stakeholders.
+
+## Future Enhancements
+
+- **Expand Test Coverage:** Add more comprehensive tests for edge cases and error scenarios.
+- **Integrate with CI/CD Pipeline:** Run Postman tests as part of the continuous integration and deployment process.
+- **Explore Postman Pro Features:** Utilize advanced features like monitoring, mock servers, and API documentation generation.
+# Postman Features for CivicWatch API
+
+This document outlines the use of Postman for API development and testing in the CivicWatch project.
+
+## 1. Why Postman?
+
+Postman is a powerful API development and testing platform chosen for its:
+
+- **User-Friendly Interface:** Intuitive UI for sending requests, inspecting responses, and managing collections.
+- **Request Building:** Easily construct HTTP requests with various methods (GET, POST, PUT, DELETE), headers, and body data.
+- **Environment Variables:** Store and manage API keys, base URLs, and other variables for reuse across requests.
+- **Collections:** Organize related requests into folders for better organization and sharing.
+- **Tests:** Write JavaScript tests to validate API responses, ensuring functionality and data integrity.
+- **Mock Servers:** Simulate API endpoints for development and testing without a live backend.
+- **Documentation Generation:** Automatically generate API documentation from your requests and responses.
+
+## 2. Key Features Implemented
+
+- **API Request Templates:** Pre-built request templates for common CivicWatch API endpoints (e.g., submitting complaints, retrieving complaints, updating status).
+- **Environment Variables:**  Configured environment variables for:
+    - Base URL (e.g., `http://localhost:8080/api/v1`)
+    - Authentication tokens (JWT)
+    - Twilio/SendGrid API keys (for notifications)
+- **Request Collections:** Organized collections for:
+    - Complaint Management
+    - User Authentication
+    - Notifications
+    - File Upload
+- **Tests:** Basic tests for:
+    - Verifying successful complaint submission
+    - Checking response status codes
+    - Validating response data structure
+
+## 3. Practical Usage Instructions
+
+1. **Installation:** Download and install Postman from [https://www.postman.com/](https://www.postman.com/).
+2. **Import Collection:** Import the `CivicWatch API.postman_collection.json` file from the project repository.
+3. **Configure Environment:** Set environment variables in Postman:
+   - `BASE_URL`: Your API base URL (e.g., `http://localhost:8080/api/v1`)
+   - `JWT_TOKEN`: Your authentication token (obtained from login)
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`: Twilio credentials (if using notifications)
+   - `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME`: SendGrid credentials (if using notifications)
+4. **Send Requests:** Select a request from the collection and click "Send" to execute it. View the response in the "Response" tab.
+5. **Run Tests:** Click the "Tests" tab and run the tests associated with a request to verify its functionality.
+
+## 4. Testing Methodology
+
+- **Unit Tests:** Focus on individual API endpoints and their expected behavior.
+- **Integration Tests:** Test interactions between multiple endpoints and services (e.g., submitting a complaint and verifying notification).
+- **End-to-End Tests:** Simulate real-world user scenarios, covering the entire workflow from complaint submission to resolution.
+
+## 5. Benefits to the Project
+
+- **Improved Development Efficiency:** Streamlined API development and testing process.
+- **Enhanced Collaboration:** Share API requests and collections with team members for better collaboration.
+- **Increased Reliability:** Automated tests ensure API functionality and data integrity.
+- **Better Documentation:** Automatically generated API documentation for developers and stakeholders.
+
+## Future Enhancements
+
+- **Expand Test Coverage:** Add more comprehensive tests for edge cases and error scenarios.
+- **Integrate with CI/CD Pipeline:** Run Postman tests as part of the continuous integration and deployment process.
+- **Explore Postman Pro Features:** Utilize advanced features like monitoring, mock servers, and API documentation generation.
+# Postman Features for CivicWatch API
+
+This document outlines the use of Postman for API development and testing in the CivicWatch project.
+
+## 1. Why Postman?
+
+Postman is a powerful API development and testing platform chosen for its:
+
+- **User-Friendly Interface:** Intuitive UI for sending requests, inspecting responses, and managing collections.
+- **Request Building:** Easily construct HTTP requests with various methods (GET, POST, PUT, DELETE), headers, and body data.
+- **Environment Variables:** Store and manage API keys, base URLs, and other variables for reuse across requests.
+- **Collections:** Organize related requests into folders for better organization and sharing.
+- **Tests:** Write JavaScript tests to validate API responses, ensuring functionality and data integrity.
+- **Mock Servers:** Simulate API endpoints for development and testing without a live backend.
+- **Documentation Generation:** Automatically generate API documentation from your requests and responses.
+
+## 2. Key Features Implemented
+
+- **API Request Templates:** Pre-built request templates for common CivicWatch API endpoints (e.g., submitting complaints, retrieving complaints, updating status).
+- **Environment Variables:**  Configured environment variables for:
+    - Base URL (e.g., `http://localhost:8080/api/v1`)
+    - Authentication tokens (JWT)
+    - Twilio/SendGrid API keys (for notifications)
+- **Request Collections:** Organized collections for:
+    - Complaint Management
+    - User Authentication
+    - Notifications
+    - File Upload
+- **Tests:** Basic tests for:
+    - Verifying successful complaint submission
+    - Checking response status codes
+    - Validating response data structure
+
+## 3. Practical Usage Instructions
+
+1. **Installation:** Download and install Postman from [https://www.postman.com/](https://www.postman.com/).
+2. **Import Collection:** Import the `CivicWatch API.postman_collection.json` file from the project repository.
+3. **Configure Environment:** Set environment variables in Postman:
+   - `BASE_URL`: Your API base URL (e.g., `http://localhost:8080/api/v1`)
+   - `JWT_TOKEN`: Your authentication token (obtained from login)
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`: Twilio credentials (if using notifications)
+   - `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME`: SendGrid credentials (if using notifications)
+4. **Send Requests:** Select a request from the collection and click "Send" to execute it. View the response in the "Response" tab.
+5. **Run Tests:** Click the "Tests" tab and run the tests associated with a request to verify its functionality.
+
+## 4. Testing Methodology
+
+- **Unit Tests:** Focus on individual API endpoints and their expected behavior.
+- **Integration Tests:** Test interactions between multiple endpoints and services (e.g., submitting a complaint and verifying notification).
+- **End-to-End Tests:** Simulate real-world user scenarios, covering the entire workflow from complaint submission to resolution.
+
+## 5. Benefits to the Project
+
+- **Improved Development Efficiency:** Streamlined API development and testing process.
+- **Enhanced Collaboration:** Share API requests and collections with team members for better collaboration.
+- **Increased Reliability:** Automated tests ensure API functionality and data integrity.
+- **Better Documentation:** Automatically generated API documentation for developers and stakeholders.
+
+## Future Enhancements
+
+- **Expand Test Coverage:** Add more comprehensive tests for edge cases and error scenarios.
+- **Integrate with CI/CD Pipeline:** Run Postman tests as part of the continuous integration and deployment process.
+- **Explore Postman Pro Features:** Utilize advanced features like monitoring, mock servers, and API documentation generation.
+# Postman Features for CivicWatch API
+
+This document outlines the use of Postman for API development and testing in the CivicWatch project.
+
+## 1. Why Postman?
+
+Postman is a powerful API development and testing platform chosen for its:
+
+- **User-Friendly Interface:** Intuitive UI for sending requests, inspecting responses, and managing collections.
+- **Request Building:** Easily construct HTTP requests with various methods (GET, POST, PUT, DELETE), headers, and body data.
+- **Environment Variables:** Store and manage API keys, base URLs, and other variables for reuse across requests.
+- **Collections:** Organize related requests into folders for better organization and sharing.
+- **Tests:** Write JavaScript tests to validate API responses, ensuring functionality and data integrity.
+- **Mock Servers:** Simulate API endpoints for development and testing without a live backend.
+- **Documentation Generation:** Automatically generate API documentation from your requests and responses.
+
+## 2. Key Features Implemented
+
+- **API Request Templates:** Pre-built request templates for common CivicWatch API endpoints (e.g., submitting complaints, retrieving complaints, updating status).
+- **Environment Variables:**  Configured environment variables for:
+    - Base URL (e.g., `http://localhost:8080/api/v1`)
+    - Authentication tokens (JWT)
+    - Twilio/SendGrid API keys (for notifications)
+- **Request Collections:** Organized collections for:
+    - Complaint Management
+    - User Authentication
+    - Notifications
+    - File Upload
+- **Tests:** Basic tests for:
+    - Verifying successful complaint submission
+    - Checking response status codes
+    - Validating response data structure
+
+## 3. Practical Usage Instructions
+
+1. **Installation:** Download and install Postman from [https://www.postman.com/](https://www.postman.com/).
+2. **Import Collection:** Import the `CivicWatch API.postman_collection.json` file from the project repository.
+3. **Configure Environment:** Set environment variables in Postman:
+   - `BASE_URL`: Your API base URL (e.g., `http://localhost:8080/api/v1`)
+   - `JWT_TOKEN`: Your authentication token (obtained from login)
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`: Twilio credentials (if using notifications)
+   - `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME`: SendGrid credentials (if using notifications)
+4. **Send Requests:** Select a request from the collection and click "Send" to execute it. View the response in the "Response" tab.
+5. **Run Tests:** Click the "Tests" tab and run the tests associated with a request to verify its functionality.
+
+## 4. Testing Methodology
+
+- **Unit Tests:** Focus on individual API endpoints and their expected behavior.
+- **Integration Tests:** Test interactions between multiple endpoints and services (e.g., submitting a complaint and verifying notification).
+- **End-to-End Tests:** Simulate real-world user scenarios, covering the entire workflow from complaint submission to resolution.
+
+## 5. Benefits to the Project
+
+- **Improved Development Efficiency:** Streamlined API development and testing process.
+- **Enhanced Collaboration:** Share API requests and collections with team members for better collaboration.
+- **Increased Reliability:** Automated tests ensure API functionality and data integrity.
+- **Better Documentation:** Automatically generated API documentation for developers and stakeholders.
+
+## Future Enhancements
+
+- **Expand Test Coverage:** Add more comprehensive tests for edge cases and error scenarios.
+- **Integrate with CI/CD Pipeline:** Run Postman tests as part of the continuous integration and deployment process.
+- **Explore Postman Pro Features:** Utilize advanced features like monitoring, mock servers, and API documentation generation.
+# Postman Features for CivicWatch API
+
+This document outlines the use of Postman for API development and testing in the CivicWatch project.
+
+## 1. Why Postman?
+
+Postman is a powerful API development and testing platform chosen for its:
+
+- **User-Friendly Interface:** Intuitive UI for sending requests, inspecting responses, and managing collections.
+- **Request Building:** Easily construct HTTP requests with various methods (GET, POST, PUT, DELETE), headers, and body data.
+- **Environment Variables:** Store and manage API keys, base URLs, and other variables for reuse across requests.
+- **Collections:** Organize related requests into folders for better organization and sharing.
+- **Tests:** Write JavaScript tests to validate API responses, ensuring functionality and data integrity.
+- **Mock Servers:** Simulate API endpoints for development and testing without a live backend.
+- **Documentation Generation:** Automatically generate API documentation from your requests and responses.
+
+## 2. Key Features Implemented
+
+- **API Request Templates:** Pre-built request templates for common CivicWatch API endpoints (e.g., submitting complaints, retrieving complaints, updating status).
+- **Environment Variables:**  Configured environment variables for:
+    - Base URL (e.g., `http://localhost:8080/api/v1`)
+    - Authentication tokens (JWT)
+    - Twilio/SendGrid API keys (for notifications)
+- **Request Collections:** Organized collections for:
+    - Complaint Management
+    - User Authentication
+    - Notifications
+    - File Upload
+- **Tests:** Basic tests for:
+    - Verifying successful complaint submission
+    - Checking response status codes
+    - Validating response data structure
+
+## 3. Practical Usage Instructions
+
+1. **Installation:** Download and install Postman from [https://www.postman.com/](https://www.postman.com/).
+2. **Import Collection:** Import the `CivicWatch API.postman_collection.json` file from the project repository.
+3. **Configure Environment:** Set environment variables in Postman:
+   - `BASE_URL`: Your API base URL (e.g., `http://localhost:8080/api/v1`)
+   - `JWT_TOKEN`: Your authentication token (obtained from login)
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`: Twilio credentials (if using notifications)
+   - `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME`: SendGrid credentials (if using notifications)
+4. **Send Requests:** Select a request from the collection and click "Send" to execute it. View the response in the "Response" tab.
+5. **Run Tests:** Click the "Tests" tab and run the tests associated with a request to verify its functionality.
+
+## 4. Testing Methodology
+
+- **Unit Tests:** Focus on individual API endpoints and their expected behavior.
+- **Integration Tests:** Test interactions between multiple endpoints and services (e.g., submitting a complaint and verifying notification).
+- **End-to-End Tests:** Simulate real-world user scenarios, covering the entire workflow from complaint submission to resolution.
+
+## 5. Benefits to the Project
+
+- **Improved Development Efficiency:** Streamlined API development and testing process.
+- **Enhanced Collaboration:** Share API requests and collections with team members for better collaboration.
+- **Increased Reliability:** Automated tests ensure API functionality and data integrity.
+- **Better Documentation:** Automatically generated API documentation for developers and stakeholders.
+
+## Future Enhancements
+
+- **Expand Test Coverage:** Add more comprehensive tests for edge cases and error scenarios.
+- **Integrate with CI/CD Pipeline:** Run Postman tests as part of the continuous integration and deployment process.
+- **Explore Postman Pro Features:** Utilize advanced features like monitoring, mock servers, and API documentation generation.
+# Postman Features for CivicWatch API
+
+This document outlines the use of Postman for API development and testing in the CivicWatch project.
+
+## 1. Why Postman?
+
+Postman is a powerful API development and testing platform chosen for its:
+
+- **User-Friendly Interface:** Intuitive UI for sending requests, inspecting responses, and managing collections.
+- **Request Building:** Easily construct HTTP requests with various methods (GET, POST, PUT, DELETE), headers, and body data.
+- **Environment Variables:** Store and manage API keys, base URLs, and other variables for reuse across requests.
+- **Collections:** Organize related requests into folders for better organization and sharing.
+- **Tests:** Write JavaScript tests to validate API responses, ensuring functionality and data integrity.
+- **Mock Servers:** Simulate API endpoints for development and testing without a live backend.
+- **Documentation Generation:** Automatically generate API documentation from your requests and responses.
+
+## 2. Key Features Implemented
+
+- **API Request Templates:** Pre-built request templates for common CivicWatch API endpoints (e.g., submitting complaints, retrieving complaints, updating status).
+- **Environment Variables:**  Configured environment variables for:
+    - Base URL (e.g., `http://localhost:8080/api/v1`)
+    - Authentication tokens (JWT)
+    - Twilio/SendGrid API keys (for notifications)
+- **Request Collections:** Organized collections for:
+    - Complaint Management
+    - User Authentication
+    - Notifications
+    - File Upload
+- **Tests:** Basic tests for:
+    - Verifying successful complaint submission
+    - Checking response status codes
+    - Validating response data structure
+
+## 3. Practical Usage Instructions
+
+1. **Installation:** Download and install Postman from [https://www.postman.com/](https://www.postman.com/).
+2. **Import Collection:** Import the `CivicWatch API.postman_collection.json` file from the project repository.
+3. **Configure Environment:** Set environment variables in Postman:
+   - `BASE_URL`: Your API base URL (e.g., `http://localhost:8080/api/v1`)
+   - `JWT_TOKEN`: Your authentication token (obtained from login)
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`: Twilio credentials (if using notifications)
+   - `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME`: SendGrid credentials (if using notifications)
+4. **Send Requests:** Select a request from the collection and click "Send" to execute it. View the response in the "Response" tab.
+5. **Run Tests:** Click the "Tests" tab and run the tests associated with a request to verify its functionality.
+
+## 4. Testing Methodology
+
+- **Unit Tests:** Focus on individual API endpoints and their expected behavior.
+- **Integration Tests:** Test interactions between multiple endpoints and services (e.g., submitting a complaint and verifying notification).
+- **End-to-End Tests:** Simulate real-world user scenarios, covering the entire workflow from complaint submission to resolution.
+
+## 5. Benefits to the Project
+
+- **Improved Development Efficiency:** Streamlined API development and testing process.
+- **Enhanced Collaboration:** Share API requests and collections with team members for better collaboration.
+- **Increased Reliability:** Automated tests ensure API functionality and data integrity.
+- **Better Documentation:** Automatically generated API documentation for developers and stakeholders.
+
+## Future Enhancements
+
+- **Expand Test Coverage:** Add more comprehensive tests for edge cases and error scenarios.
+- **Integrate with CI/CD Pipeline:** Run Postman tests as part of the continuous integration and deployment process.
+- **Explore Postman Pro Features:** Utilize advanced features like monitoring, mock servers, and API documentation generation.
+# Postman Features for CivicWatch API
+
+This document outlines the use of Postman for API development and testing in the CivicWatch project.
+
+## 1. Why Postman?
+
+Postman is a powerful API development and testing platform chosen for its:
+
+- **User-Friendly Interface:** Intuitive UI for sending requests, inspecting responses, and managing collections.
+- **Request Building:** Easily construct HTTP requests with various methods (GET, POST, PUT, DELETE), headers, and body data.
+- **Environment Variables:** Store and manage API keys, base URLs, and other variables for reuse across requests.
+- **Collections:** Organize related requests into folders for better organization and sharing.
+- **Tests:** Write JavaScript tests to validate API responses, ensuring functionality and data integrity.
+- **Mock Servers:** Simulate API endpoints for development and testing without a live backend.
+- **Documentation Generation:** Automatically generate API documentation from your requests and responses.
+
+## 2. Key Features Implemented
+
+- **API Request Templates:** Pre-built request templates for common CivicWatch API endpoints (e.g., submitting complaints, retrieving complaints, updating status).
+- **Environment Variables:**  Configured environment variables for:
+    - Base URL (e.g., `http://localhost:8080/api/v1`)
+    - Authentication tokens (JWT)
+    - Twilio/SendGrid API keys (for notifications)
+- **Request Collections:** Organized collections for:
+    - Complaint Management
+    - User Authentication
+    - Notifications
+    - File Upload
+- **Tests:** Basic tests for:
+    - Verifying successful complaint submission
+    - Checking response status codes
+    - Validating response data structure
+
+## 3. Practical Usage Instructions
+
+1. **Installation:** Download and install Postman from [https://www.postman.com/](https://www.postman.com/).
+2. **Import Collection:** Import the `CivicWatch API.postman_collection.json` file from the project repository.
+3. **Configure Environment:** Set environment variables in Postman:
+   - `BASE_URL`: Your API base URL (e.g., `http://localhost:8080/api/v1`)
+   - `JWT_TOKEN`: Your authentication token (obtained from login)
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`: Twilio credentials (if using notifications)
+   - `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME`: SendGrid credentials (if using notifications)
+4. **Send Requests:** Select a request from the collection and click "Send" to execute it. View the response in the "Response" tab.
+5. **Run Tests:** Click the "Tests" tab and run the tests associated with a request to verify its functionality.
+
+## 4. Testing Methodology
+
+- **Unit Tests:** Focus on individual API endpoints and their expected behavior.
+- **Integration Tests:** Test interactions between multiple endpoints and services (e.g., submitting a complaint and verifying notification).
+- **End-to-End Tests:** Simulate real-world user scenarios, covering the entire workflow from complaint submission to resolution.
+
+## 5. Benefits to the Project
+
+- **Improved Development Efficiency:** Streamlined API development and testing process.
+- **Enhanced Collaboration:** Share API requests and collections with team members for better collaboration.
+- **Increased Reliability:** Automated tests ensure API functionality and data integrity.
+- **Better Documentation:** Automatically generated API documentation for developers and stakeholders.
+
+## Future Enhancements
+
+- **Expand Test Coverage:** Add more comprehensive tests for edge cases and error scenarios.
+- **Integrate with CI/CD Pipeline:** Run Postman tests as part of the continuous integration and deployment process.
+- **Explore Postman Pro Features:** Utilize advanced features like monitoring, mock servers, and API documentation generation.
