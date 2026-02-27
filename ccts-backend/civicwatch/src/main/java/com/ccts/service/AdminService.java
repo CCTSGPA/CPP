@@ -1,0 +1,343 @@
+package com.ccts.service;
+
+import com.ccts.dto.AdminUserProfileResponse;
+import com.ccts.dto.AdminUserSummaryResponse;
+import com.ccts.dto.ComplaintResponse;
+import com.ccts.dto.EvidenceMetadataResponse;
+import com.ccts.dto.StatsResponse;
+import com.ccts.dto.StatusUpdateRequest;
+import com.ccts.dto.TimelineEntryResponse;
+import com.ccts.exception.CustomException;
+import com.ccts.model.Complaint;
+import com.ccts.model.ComplaintStatus;
+import com.ccts.model.StatusHistory;
+import com.ccts.model.User;
+import com.ccts.model.UserRole;
+import com.ccts.repository.ComplaintRepository;
+import com.ccts.repository.StatusHistoryRepository;
+import com.ccts.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.time.LocalDateTime;
+
+/**
+ * Service for admin operations
+ */
+@Service
+@RequiredArgsConstructor
+public class AdminService {
+
+    private static final int SLA_HOURS = 72;
+    private static final int HIGH_SEVERITY_THRESHOLD = 75;
+
+    private final ComplaintRepository complaintRepository;
+    private final UserRepository userRepository;
+    private final StatusHistoryRepository statusHistoryRepository;
+    private final NotificationService notificationService;
+
+    /**
+     * Get all complaints (admin view)
+     */
+    public Page<ComplaintResponse> getAllComplaints(Pageable pageable) {
+        return complaintRepository.findAllComplaints(pageable)
+                .map(this::mapToResponse);
+    }
+
+    /**
+     * Get complaints by status
+     */
+    public Page<ComplaintResponse> getComplaintsByStatus(ComplaintStatus status, Pageable pageable) {
+        return complaintRepository.findByStatus(status, pageable)
+                .map(this::mapToResponse);
+    }
+
+    /**
+     * Get complaint by ID
+     */
+    public ComplaintResponse getComplaintById(Long id) {
+        Complaint complaint = complaintRepository.findById(id)
+                .orElseThrow(() -> CustomException.notFound("Complaint not found"));
+        return mapToResponse(complaint);
+    }
+
+    public Page<AdminUserSummaryResponse> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable)
+                .map(user -> AdminUserSummaryResponse.builder()
+                        .id(user.getId())
+                        .name(user.getName())
+                        .email(user.getEmail())
+                        .role(user.getRole())
+                        .authProvider(user.getOauthProvider())
+                        .accountCreatedAt(user.getCreatedAt())
+                        .lastLoginAt(user.getLastLoginAt())
+                        .enabled(user.isEnabled())
+                        .build());
+    }
+
+    public Page<EvidenceMetadataResponse> getEvidenceMetadata(Pageable pageable) {
+        return complaintRepository.findByEvidenceUrlIsNotNull(pageable)
+                .map(this::mapToEvidenceMetadataResponse);
+    }
+
+    public Page<TimelineEntryResponse> getTimeline(Pageable pageable) {
+        return statusHistoryRepository.findAll(pageable)
+                .map(this::mapToTimelineResponse);
+    }
+
+    public Page<TimelineEntryResponse> getTimelineByComplaintId(Long complaintId, Pageable pageable) {
+        Complaint complaint = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> CustomException.notFound("Complaint not found"));
+
+        List<StatusHistory> history = statusHistoryRepository.findByComplaintOrderByTimestampDesc(complaint);
+        List<TimelineEntryResponse> mapped = history.stream().map(this::mapToTimelineResponse).toList();
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), mapped.size());
+        List<TimelineEntryResponse> pageContent = start >= mapped.size() ? List.of() : mapped.subList(start, end);
+        return new org.springframework.data.domain.PageImpl<>(pageContent, pageable, mapped.size());
+    }
+
+        public AdminUserProfileResponse getUserProfile(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> CustomException.notFound("User not found"));
+
+        long totalComplaints = complaintRepository.countByUser(user);
+
+        return AdminUserProfileResponse.builder()
+            .id(user.getId())
+            .name(user.getName())
+            .email(user.getEmail())
+            .role(user.getRole())
+            .authProvider(user.getOauthProvider())
+            .accountCreatedAt(user.getCreatedAt())
+            .lastLoginAt(user.getLastLoginAt())
+            .phone(user.getPhone())
+            .department(user.getDepartment())
+            .designation(user.getDesignation())
+            .totalComplaints(totalComplaints)
+            .build();
+        }
+
+        public Page<ComplaintResponse> getComplaintsByUserId(Long userId, Pageable pageable) {
+        return complaintRepository.findByUserId(userId, pageable)
+            .map(this::mapToResponse);
+        }
+
+    /**
+     * Update complaint status
+     */
+    @Transactional
+    public ComplaintResponse updateComplaintStatus(Long id, StatusUpdateRequest request, User admin) {
+        Complaint complaint = complaintRepository.findById(id)
+                .orElseThrow(() -> CustomException.notFound("Complaint not found"));
+
+        ComplaintStatus oldStatus = complaint.getStatus();
+        ComplaintStatus newStatus = request.getStatus();
+
+        // Update complaint
+        complaint.setStatus(newStatus);
+        if (request.getAdminNotes() != null) {
+            complaint.setAdminNotes(request.getAdminNotes());
+        }
+        if (request.getRejectionReason() != null) {
+            complaint.setRejectionReason(request.getRejectionReason());
+        }
+
+        complaintRepository.save(complaint);
+
+        // Record status history
+        StatusHistory history = StatusHistory.builder()
+                .complaint(complaint)
+                .oldStatus(oldStatus)
+                .newStatus(newStatus)
+                .changedBy(admin)
+                .comment(request.getAdminNotes())
+                .timestamp(LocalDateTime.now())
+                .build();
+        
+        statusHistoryRepository.save(history);
+        
+        // Send status update notification
+        ComplaintResponse response = mapToResponse(complaint);
+        notificationService.sendStatusUpdateNotification(response, newStatus.name(), request.getAdminNotes());
+        
+        return response;
+    }
+
+    /**
+     * Assign complaint to officer
+     */
+    @Transactional
+    public ComplaintResponse assignComplaintToOfficer(Long complaintId, Long officerId) {
+        Complaint complaint = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> CustomException.notFound("Complaint not found"));
+
+        User officer = userRepository.findById(officerId)
+                .orElseThrow(() -> CustomException.notFound("Officer not found"));
+
+        if (officer.getRole() != UserRole.OFFICER && officer.getRole() != UserRole.ADMIN) {
+            throw CustomException.badRequest("User is not an officer");
+        }
+
+        ComplaintStatus oldStatus = complaint.getStatus();
+        
+        complaint.setAssignedOfficer(officer);
+        complaint.setStatus(ComplaintStatus.UNDER_REVIEW);
+        
+        complaintRepository.save(complaint);
+
+        // Record status history
+        StatusHistory history = StatusHistory.builder()
+                .complaint(complaint)
+                .oldStatus(oldStatus)
+                .newStatus(ComplaintStatus.UNDER_REVIEW)
+                .changedBy(officer)
+                .comment("Assigned to officer: " + officer.getName())
+                .timestamp(LocalDateTime.now())
+                .build();
+        
+        statusHistoryRepository.save(history);
+        
+        // Send assignment notification
+        ComplaintResponse response = mapToResponse(complaint);
+        notificationService.sendAssignmentNotification(response, officer.getName());
+        
+        return response;
+    }
+
+    /**
+     * Get statistics
+     */
+    public StatsResponse getStats() {
+        long totalComplaints = complaintRepository.count();
+        long submittedCount = complaintRepository.countByStatus(ComplaintStatus.SUBMITTED);
+        long underReviewCount = complaintRepository.countByStatus(ComplaintStatus.UNDER_REVIEW);
+        long approvedCount = complaintRepository.countByStatus(ComplaintStatus.APPROVED);
+        long rejectedCount = complaintRepository.countByStatus(ComplaintStatus.REJECTED);
+        long resolvedCount = complaintRepository.countByStatus(ComplaintStatus.RESOLVED);
+        List<Complaint> allComplaints = complaintRepository.findAll();
+
+        long slaBreaches = allComplaints.stream().filter(this::isSlaBreached).count();
+        long highSeverity = allComplaints.stream()
+            .filter(c -> c.getAiSeverityScore() != null && c.getAiSeverityScore() >= HIGH_SEVERITY_THRESHOLD)
+            .count();
+        double resolutionRate = totalComplaints == 0 ? 0.0 : ((double) resolvedCount / (double) totalComplaints) * 100.0;
+        
+        long totalUsers = userRepository.findByRole(UserRole.USER).size();
+        long totalOfficers = userRepository.findByRole(UserRole.OFFICER).size();
+
+        return StatsResponse.builder()
+                .totalComplaints(totalComplaints)
+                .submittedCount(submittedCount)
+                .underReviewCount(underReviewCount)
+                .approvedCount(approvedCount)
+                .rejectedCount(rejectedCount)
+                .resolvedCount(resolvedCount)
+                .slaBreaches(slaBreaches)
+                .highSeverity(highSeverity)
+                .resolutionRate(resolutionRate)
+                .totalUsers(totalUsers)
+                .totalOfficers(totalOfficers)
+                .build();
+    }
+
+    private LocalDateTime calculateSlaDeadline(Complaint complaint) {
+        if (complaint.getCreatedAt() == null) {
+            return null;
+        }
+        return complaint.getCreatedAt().plusHours(SLA_HOURS);
+    }
+
+    private EvidenceMetadataResponse mapToEvidenceMetadataResponse(Complaint complaint) {
+        String evidenceUrl = complaint.getEvidenceUrl();
+        String fileName = evidenceUrl;
+        if (evidenceUrl != null) {
+            int lastSlash = evidenceUrl.lastIndexOf('/');
+            if (lastSlash >= 0 && lastSlash < evidenceUrl.length() - 1) {
+                fileName = evidenceUrl.substring(lastSlash + 1);
+            }
+        }
+
+        String fileType = null;
+        if (fileName != null && fileName.contains(".")) {
+            fileType = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+        }
+
+        return EvidenceMetadataResponse.builder()
+                .id(complaint.getId())
+                .complaintId(complaint.getId())
+                .complaintTrackingNumber(complaint.getTrackingNumber())
+                .fileName(fileName)
+                .fileType(fileType)
+                .fileUrl(evidenceUrl)
+                .uploadDate(complaint.getCreatedAt())
+            .integrityStatus(null)
+            .virusScanStatus(null)
+                .sha256(null)
+                .build();
+    }
+
+    private TimelineEntryResponse mapToTimelineResponse(StatusHistory history) {
+        return TimelineEntryResponse.builder()
+                .id(history.getId())
+                .complaintId(history.getComplaint().getId())
+                .trackingNumber(history.getComplaint().getTrackingNumber())
+                .oldStatus(history.getOldStatus())
+                .newStatus(history.getNewStatus())
+                .changedBy(history.getChangedBy() != null ? history.getChangedBy().getName() : null)
+                .comment(history.getComment())
+                .timestamp(history.getTimestamp())
+                .build();
+    }
+
+    private boolean isSlaBreached(Complaint complaint) {
+        LocalDateTime slaDeadline = calculateSlaDeadline(complaint);
+        if (slaDeadline == null) {
+            return false;
+        }
+        boolean terminalStatus = complaint.getStatus() == ComplaintStatus.RESOLVED || complaint.getStatus() == ComplaintStatus.REJECTED;
+        return !terminalStatus && LocalDateTime.now().isAfter(slaDeadline);
+    }
+
+    /**
+     * Map complaint entity to response DTO
+     */
+    private ComplaintResponse mapToResponse(Complaint complaint) {
+        return ComplaintResponse.builder()
+                .id(complaint.getId())
+                .title(complaint.getTitle())
+                .description(complaint.getDescription())
+                .category(complaint.getCategory())
+                .location(complaint.getLocation())
+                .latitude(complaint.getLatitude())
+                .longitude(complaint.getLongitude())
+                .accuracy(complaint.getAccuracy())
+                .incidentDate(complaint.getIncidentDate())
+                .evidenceUrl(complaint.getEvidenceUrl())
+                .respondentName(complaint.getRespondentName())
+                .respondentDesignation(complaint.getRespondentDesignation())
+                .respondentDepartment(complaint.getRespondentDepartment())
+                .status(complaint.getStatus())
+                .trackingNumber(complaint.getTrackingNumber())
+                .createdAt(complaint.getCreatedAt())
+                .updatedAt(complaint.getUpdatedAt())
+                .adminNotes(complaint.getAdminNotes())
+                .rejectionReason(complaint.getRejectionReason())
+                .aiSeverityScore(complaint.getAiSeverityScore())
+                .aiSummary(complaint.getAiSummary())
+                .slaDeadline(calculateSlaDeadline(complaint))
+                .slaBreached(isSlaBreached(complaint))
+                .escalationFlagged(isSlaBreached(complaint))
+                .userId(complaint.getUser().getId())
+                .userName(complaint.getUser().getName())
+                .userEmail(complaint.getUser().getEmail())
+                .assignedOfficerId(complaint.getAssignedOfficer() != null ? complaint.getAssignedOfficer().getId() : null)
+                .assignedOfficerName(complaint.getAssignedOfficer() != null ? complaint.getAssignedOfficer().getName() : null)
+                .build();
+    }
+}

@@ -1,0 +1,103 @@
+# Server Configuration
+server:
+  port: 8081
+  servlet:
+    context-path: /
+
+# Application Configuration
+spring:
+  application:
+    name: corruption-complaint-system
+  main:
+    allow-circular-references: true
+
+  # Database Configuration
+  datasource:
+    url: jdbc:mysql://${DB_HOST:${SPRING_DATASOURCE_HOST:localhost}}:${DB_PORT:${SPRING_DATASOURCE_PORT:3306}}/${DB_NAME:${SPRING_DATASOURCE_DB:corruption_db}}?createDatabaseIfNotExist=${DB_CREATE_IF_NOT_EXISTS:false}&useSSL=${DB_SSL_ENABLED:false}&requireSSL=${DB_REQUIRE_SSL:false}&verifyServerCertificate=${DB_VERIFY_SERVER_CERT:false}&allowPublicKeyRetrieval=${DB_ALLOW_PUBLIC_KEY_RETRIEVAL:true}&serverTimezone=${DB_SERVER_TIMEZONE:UTC}
+    username: ${DB_USERNAME:${SPRING_DATASOURCE_USERNAME:root}}
+    password: ${DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD:Dhruv@07}}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+  
+  # File Upload Configuration
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# JWT Configuration (Base64 encoded secret key)
+jwt:
+  secret: eW91ci1zdXBlci1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tbWFzdC1iZS1hdC1sZWFzdC0zMi1iaXRzLWxvbmc=
+  expiration: 3600000  # 1 hour in milliseconds
+  refresh-expiration: 604800000  # 7 days
+
+# Twilio Configuration
+twilio:
+  account-sid: ${TWILIO_ACCOUNT_SID:ACe9170ab8669a90f8c4b5fb48e5c21b39}
+  auth-token: ${TWILIO_AUTH_TOKEN:fad7e2acbe847f61250ccf52354040cc}
+  phone-number: ${TWILIO_PHONE_NUMBER:+1234567890}
+  messaging-service-sid: ${TWILIO_MESSAGING_SERVICE_SID:}
+
+# SendGrid Configuration
+sendgrid:
+  api-key: ${SENDGRID_API_KEY:your_sendgrid_api_key}
+  from-email: ${SENDGRID_FROM_EMAIL:noreply@civicwatch.com}
+  from-name: ${SENDGRID_FROM_NAME:CivicWatch}
+
+# Notification Settings
+notification:
+  enabled: true
+  admin-email: ${ADMIN_EMAIL:admin@civicwatch.com}
+  admin-phone: ${ADMIN_PHONE:+1234567890}
+  send-on-complaint-submit: true
+  send-on-status-update: true
+  send-on-assignment: true
+
+# OAuth2 Configuration
+oauth2:
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:your_google_client_id}
+    client-secret: ${GOOGLE_CLIENT_SECRET:your_google_client_secret}
+    redirect-uri: http://localhost:3000/auth/google/callback
+
+  facebook:
+    client-id: ${FACEBOOK_APP_ID:your_facebook_app_id}
+    client-secret: ${FACEBOOK_APP_SECRET:your_facebook_app_secret}
+    redirect-uri: http://localhost:3000/auth/facebook/callback
+
+  apple:
+    client-id: ${APPLE_SERVICES_ID:your_apple_services_id}
+    team-id: ${APPLE_TEAM_ID:your_apple_team_id}
+    key-id: ${APPLE_KEY_ID:your_apple_key_id}
+    private-key: ${APPLE_PRIVATE_KEY:your_apple_private_key}
+    redirect-uri: http://localhost:3000/auth/apple/callback
+
+  microsoft:
+    client-id: ${MICROSOFT_CLIENT_ID:your_microsoft_client_id}
+    client-secret: ${MICROSOFT_CLIENT_SECRET:your_microsoft_client_secret}
+    redirect-uri: http://localhost:3000/auth/microsoft/callback
+
+# Swagger Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+# File Upload Directory
+file:
+  upload-dir: ./uploads/evidence
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.corruption: DEBUG
