@@ -1,0 +1,405 @@
+# CCTS API Testing Guide (Postman) — Zero to Advanced
+
+This guide helps you test the app successfully from scratch using Postman.
+
+---
+
+## 0) What you are testing
+
+- Backend base URL: `http://localhost:8081`
+- Main API prefix: `/api/v1`
+- Auth endpoints: `/api/v1/auth/*`
+- Complaint endpoints: `/api/v1/complaints/*`
+- File upload endpoint: `/api/v1/files/upload`
+
+Important:
+- Frontend runs on `http://localhost:5173` and proxies `/api` to backend.
+- In Postman, use backend URL directly (`http://localhost:8081`) unless you intentionally test via frontend proxy.
+
+---
+
+## 1) Start the application (required before Postman)
+
+### 1.1 Start backend
+1. Open terminal in:
+	 - `ccts-backend/civicwatch`
+2. Run:
+	 - Windows: `mvnw.cmd spring-boot:run`
+3. Wait for startup complete log.
+
+### 1.2 Health check in browser/Postman
+- Open: `http://localhost:8081/swagger-ui.html`
+- If this opens, backend is up.
+
+### 1.3 (Optional) Start frontend
+1. Open terminal in:
+	 - `ccts-frontend`
+2. Run:
+	 - `npm install`
+	 - `npm run dev`
+3. Frontend URL:
+	 - `http://localhost:5173`
+
+---
+
+## 2) Postman initial setup
+
+### 2.1 Create Environment
+Create Postman Environment `CCTS Local` with variables:
+
+- `baseUrl` = `http://localhost:8081`
+- `apiPrefix` = `/api/v1`
+- `token` = *(empty)*
+- `trackingNumber` = *(empty)*
+- `complaintId` = *(empty)*
+- `evidenceUrl` = *(empty)*
+
+### 2.2 Create Collection
+Create collection: `CCTS API Tests`
+
+In Collection Authorization:
+- Type: `Bearer Token`
+- Token: `{{token}}`
+
+This auto-applies auth to protected endpoints.
+
+---
+
+## 3) Zero-level flow (minimum successful flow)
+
+Run in this order.
+
+### 3.1 Register user
+
+Request:
+- Method: `POST`
+- URL: `{{baseUrl}}{{apiPrefix}}/auth/register`
+- Auth: `No Auth`
+- Body (raw JSON):
+
+```json
+{
+	"name": "Test User",
+	"email": "testuser1@example.com",
+	"password": "Test@123",
+	"phone": "9999999999",
+	"role": "USER",
+	"department": "General",
+	"designation": "Citizen"
+}
+```
+
+Expected:
+- Status: `201 Created`
+- JSON has `status: "success"`
+
+### 3.2 Login user
+
+Request:
+- Method: `POST`
+- URL: `{{baseUrl}}{{apiPrefix}}/auth/login`
+- Auth: `No Auth`
+- Body (raw JSON):
+
+```json
+{
+	"email": "testuser1@example.com",
+	"password": "Test@123"
+}
+```
+
+Expected:
+- Status: `200 OK`
+- Token location: `response.data.token`
+
+Tests tab script (save token):
+
+```javascript
+pm.test("Login success", function () {
+	pm.response.to.have.status(200);
+});
+
+pm.test("Token exists", function () {
+	const json = pm.response.json();
+	pm.expect(json.data.token).to.be.a("string").and.not.empty;
+	pm.environment.set("token", json.data.token);
+});
+```
+
+### 3.3 Submit complaint
+
+Request:
+- Method: `POST`
+- URL: `{{baseUrl}}{{apiPrefix}}/complaints`
+- Auth: Bearer `{{token}}`
+- Body (raw JSON):
+
+```json
+{
+	"title": "Bribe demanded in licensing office",
+	"description": "Officer asked for money for normal service.",
+	"category": "Licensing",
+	"location": "City Licensing Office",
+	"latitude": 28.6139,
+	"longitude": 77.209,
+	"accuracy": 10.5,
+	"incidentDate": "2026-02-26T14:30:00",
+	"respondentName": "",
+	"respondentDesignation": "",
+	"respondentDepartment": ""
+}
+```
+
+Important format:
+- `incidentDate` must be `yyyy-MM-ddTHH:mm:ss`
+- Avoid timezone suffix `Z` for this backend.
+
+Expected:
+- Status: `201 Created`
+- Response includes `data.trackingNumber`
+
+Tests tab script (save tracking number & id):
+
+```javascript
+pm.test("Complaint submitted", function () {
+	pm.response.to.have.status(201);
+	const json = pm.response.json();
+	pm.expect(json.status).to.eql("success");
+	pm.expect(json.data.trackingNumber).to.be.a("string");
+
+	pm.environment.set("trackingNumber", json.data.trackingNumber);
+	pm.environment.set("complaintId", String(json.data.id));
+});
+```
+
+### 3.4 Track complaint (public endpoint)
+
+Request:
+- Method: `GET`
+- URL: `{{baseUrl}}{{apiPrefix}}/complaints/track/{{trackingNumber}}`
+- Auth: `No Auth`
+
+Expected:
+- Status: `200 OK`
+- `data.trackingNumber` equals environment value
+
+---
+
+## 4) Intermediate testing flow
+
+### 4.1 Upload evidence image
+
+Request:
+- Method: `POST`
+- URL: `{{baseUrl}}{{apiPrefix}}/files/upload`
+- Auth: Bearer `{{token}}`
+- Body: `form-data`
+	- key: `file` (type = File)
+	- value: select image `.png/.jpg`
+
+Expected:
+- Status: `200 OK`
+- `data.url` returned (for example `/uploads/evidence/<uuid>.jpg`)
+
+Tests script:
+
+```javascript
+pm.test("Upload success", function () {
+	pm.response.to.have.status(200);
+	const json = pm.response.json();
+	pm.expect(json.data.url).to.be.a("string").and.include("/uploads/evidence/");
+	pm.environment.set("evidenceUrl", json.data.url);
+});
+```
+
+### 4.2 Submit complaint with uploaded evidence URL
+
+Use the same submit complaint request body and include:
+
+```json
+"evidenceUrl": "{{evidenceUrl}}"
+```
+
+Note:
+- Current backend DTO may ignore unknown fields depending on config; if rejected, remove unsupported keys.
+
+### 4.3 Get my complaints (authenticated)
+
+Request:
+- Method: `GET`
+- URL: `{{baseUrl}}{{apiPrefix}}/complaints/my?page=0&size=10`
+- Auth: Bearer `{{token}}`
+
+Expected:
+- Status: `200 OK`
+- Response has paginated `data.content`
+
+### 4.4 Get complaint by id
+
+Request:
+- Method: `GET`
+- URL: `{{baseUrl}}{{apiPrefix}}/complaints/{{complaintId}}`
+- Auth: Bearer `{{token}}`
+
+Expected:
+- Status: `200 OK`
+
+---
+
+## 5) Advanced flow (automation + admin + assertions)
+
+## 5.1 Collection variables and chaining
+
+Use variables consistently:
+- URL template always: `{{baseUrl}}{{apiPrefix}}/...`
+- Save and reuse:
+	- `token`
+	- `trackingNumber`
+	- `complaintId`
+	- `evidenceUrl`
+
+## 5.2 Add common Tests for every request
+
+Recommended Tests snippet:
+
+```javascript
+pm.test("Response time < 2s", function () {
+	pm.expect(pm.response.responseTime).to.be.below(2000);
+});
+
+pm.test("JSON response", function () {
+	pm.expect(pm.response.headers.get("Content-Type")).to.include("application/json");
+});
+```
+
+## 5.3 Negative test cases (very important)
+
+### A) Login with wrong password
+- Expect: `401 Unauthorized`
+
+### B) Submit complaint without token
+- Remove bearer token temporarily
+- Expect: `401 Unauthorized`
+
+### C) Submit complaint with missing required fields
+Body:
+
+```json
+{
+	"title": "",
+	"description": "",
+	"category": ""
+}
+```
+
+Expect:
+- `400 Bad Request`
+- Validation error message
+
+### D) Upload non-image file
+- Use `.txt` or `.pdf`
+- Expect: `400 Bad Request`
+- Message: only image allowed
+
+### E) Upload image > 10MB
+- Expect: `400 Bad Request`
+
+## 5.4 Admin APIs (if admin account available)
+
+Admin login:
+- `POST {{baseUrl}}{{apiPrefix}}/auth/login` with admin credentials
+- Save admin token to `token`
+
+Potential admin endpoints (protected):
+- `GET {{baseUrl}}{{apiPrefix}}/admin/complaints?page=0&size=20`
+- `GET {{baseUrl}}{{apiPrefix}}/admin/complaints/{{complaintId}}`
+- `PUT {{baseUrl}}{{apiPrefix}}/admin/complaints/{{complaintId}}/status`
+- `GET {{baseUrl}}{{apiPrefix}}/admin/statistics`
+
+For status update body example:
+
+```json
+{
+	"status": "UNDER_REVIEW",
+	"rejectionReason": null
+}
+```
+
+Adjust enum values based on backend accepted statuses.
+
+## 5.5 Use Postman Runner
+
+1. Open Collection Runner
+2. Select `CCTS API Tests`
+3. Choose Environment `CCTS Local`
+4. Run sequence:
+	 - Register
+	 - Login
+	 - Upload
+	 - Submit
+	 - Track
+	 - Get My Complaints
+5. Verify all passed.
+
+---
+
+## 6) Troubleshooting checklist
+
+### Problem: `An error occurred while submitting the complaint`
+
+Check:
+1. Backend running on `8081`
+2. Token exists and valid (`{{token}}` not empty)
+3. `incidentDate` format is `yyyy-MM-ddTHH:mm:ss`
+4. Required fields present: `title`, `description`, `category`
+5. CORS not relevant in Postman (it is browser-only)
+
+### Problem: `401 Unauthorized`
+
+Check:
+1. Login request successful
+2. `token` saved from `response.data.token`
+3. Collection auth uses `Bearer {{token}}`
+
+### Problem: `400 Validation failed`
+
+Check backend error message in response body and fix payload fields.
+
+### Problem: file upload fails
+
+Check:
+1. Body type is `form-data`
+2. Key name exactly `file`
+3. File type image/*
+4. File size <= 10MB
+
+---
+
+## 7) Quick copy-paste request URLs
+
+- `POST  {{baseUrl}}{{apiPrefix}}/auth/register`
+- `POST  {{baseUrl}}{{apiPrefix}}/auth/login`
+- `POST  {{baseUrl}}{{apiPrefix}}/files/upload`
+- `POST  {{baseUrl}}{{apiPrefix}}/complaints`
+- `GET   {{baseUrl}}{{apiPrefix}}/complaints/track/{{trackingNumber}}`
+- `GET   {{baseUrl}}{{apiPrefix}}/complaints/my?page=0&size=10`
+- `GET   {{baseUrl}}{{apiPrefix}}/complaints/{{complaintId}}`
+- `GET   {{baseUrl}}{{apiPrefix}}/admin/complaints?page=0&size=20`
+- `PUT   {{baseUrl}}{{apiPrefix}}/admin/complaints/{{complaintId}}/status`
+- `GET   {{baseUrl}}{{apiPrefix}}/admin/statistics`
+
+---
+
+## 8) Final successful test criteria
+
+Your API testing is successful when:
+- Register returns `201`
+- Login returns `200` and token stored
+- Submit complaint returns `201` with tracking number
+- Track complaint returns `200` for same tracking number
+- My complaints includes submitted record
+- Negative tests return expected error codes (`400/401`)
+
+---
+
+End of guide.

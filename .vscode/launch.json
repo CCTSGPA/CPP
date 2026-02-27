@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "CctsApplication",
+            "request": "launch",
+            "mainClass": "CctsApplication",
+            "projectName": "ccts-backend"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-CctsApplication<ccts-backend>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.ccts.CctsApplication",
+            "projectName": "ccts-backend",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
