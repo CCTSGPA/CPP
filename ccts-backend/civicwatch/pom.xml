@@ -7,12 +7,12 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.2</version>
+        <version>3.5.0</version>        
         <relativePath/>
     </parent>
     
     <groupId>com.corruption</groupId>
-    <artifactId>ccts-backend</artifactId>
+    <artifactId>ccts-backend</artifactId>   
     <version>1.0.0</version>
     <name>CCTS Backend</name>
     <description>Corruption Complaint and Tracking System Backend</description>

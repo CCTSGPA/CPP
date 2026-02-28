@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import MainLayout from "../layouts/MainLayout";
 import { uploadFile, submitComplaint } from "../services/complaintsService";
-import { getCurrentPosition, reverseGeocodeDebounced } from "../services/locationService";
+import { getHighAccuracyPosition, reverseGeocodeDebounced } from "../services/locationService";
 
 // Categories for corruption complaints
 const COMPLAINT_CATEGORIES = [
@@ -50,20 +50,35 @@ export default function FileComplaint() {
   const [locationStatus, setLocationStatus] = useState({ type: "", message: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [locationAccuracy, setLocationAccuracy] = useState(null);
   const [isCapturingImage, setIsCapturingImage] = useState(false);
   
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
 
-  // Get user's geolocation + reverse geocode
+  // Get user's geolocation with high accuracy + reverse geocode
   const getLocation = async () => {
     setIsGettingLocation(true);
     setLocationStatus({ type: "", message: "" });
+    setLocationAccuracy(null);
 
     try {
-      const position = await getCurrentPosition();
+      // Use high accuracy position with progress tracking
+      const position = await getHighAccuracyPosition({
+        targetAccuracy: 20, // Target 20 meters accuracy for best results
+        timeout: 30000,     // Wait up to 30 seconds
+        onProgress: (accuracy) => {
+          setLocationAccuracy(Math.round(accuracy));
+          setLocationStatus({
+            type: "loading",
+            message: `Improving accuracy: ${Math.round(accuracy)}m (targeting ≤20m)...`,
+          });
+        },
+      });
+
       const { latitude, longitude, accuracy } = position.coords;
+      setLocationAccuracy(Math.round(accuracy));
 
       const geocodeResponse = await reverseGeocodeDebounced(latitude, longitude);
       const geo = geocodeResponse?.data || {};
@@ -76,7 +91,7 @@ export default function FileComplaint() {
       setLocationDetails({
         latitude,
         longitude,
-        accuracy,
+        accuracy: Math.round(accuracy),
         city: geo.city || "",
         area: geo.area || "",
         state: geo.state || "",
@@ -85,7 +100,17 @@ export default function FileComplaint() {
       });
 
       setValue("location", computedAddress, { shouldValidate: true });
-      setLocationStatus({ type: "success", message: "Location detected and fields auto-filled." });
+      
+      const accuracyMsg = accuracy <= 20 
+        ? `High accuracy (±${Math.round(accuracy)}m)` 
+        : accuracy <= 50 
+          ? `Good accuracy (±${Math.round(accuracy)}m)` 
+          : `Moderate accuracy (±${Math.round(accuracy)}m)`;
+      
+      setLocationStatus({ 
+        type: "success", 
+        message: `Location detected. ${accuracyMsg}` 
+      });
     } catch (error) {
       if (error.message === "Previous location request superseded by a newer request.") {
         return;
@@ -503,18 +528,29 @@ export default function FileComplaint() {
                         type="button"
                         onClick={getLocation}
                         disabled={isGettingLocation}
-                        className="mt-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                        className="mt-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors min-w-[160px]"
                       >
-                        {isGettingLocation ? "Detecting..." : "Detect My Location"}
+                        {isGettingLocation 
+                          ? locationAccuracy 
+                            ? `Accuracy: ${locationAccuracy}m...` 
+                            : "Detecting..." 
+                          : "Detect My Location"}
                       </button>
                     </div>
                     {locationDetails && (
                       <p className="text-xs text-gray-500 mt-1">
-                        Coordinates: {locationDetails.latitude.toFixed(6)}, {locationDetails.longitude.toFixed(6)} | Accuracy: ±{locationDetails.accuracy.toFixed(0)}m
+                        Coordinates: {locationDetails.latitude.toFixed(6)}, {locationDetails.longitude.toFixed(6)} | Accuracy: ±{locationDetails.accuracy}m
+                        {locationDetails.accuracy <= 20 && <span className="ml-2 text-green-600 font-medium">✓ High accuracy</span>}
+                        {locationDetails.accuracy > 20 && locationDetails.accuracy <= 50 && <span className="ml-2 text-blue-600 font-medium">✓ Good accuracy</span>}
+                        {locationDetails.accuracy > 50 && <span className="ml-2 text-amber-600 font-medium">⚠ Moderate accuracy</span>}
                       </p>
                     )}
                     {locationStatus.message && (
-                      <p className={`text-sm mt-1 ${locationStatus.type === "error" ? "text-red-600" : "text-green-700"}`}>
+                      <p className={`text-sm mt-1 ${
+                        locationStatus.type === "error" ? "text-red-600" : 
+                        locationStatus.type === "loading" ? "text-blue-600 animate-pulse" : 
+                        "text-green-700"
+                      }`}>
                         {locationStatus.message}
                       </p>
                     )}

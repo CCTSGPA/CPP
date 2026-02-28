@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-// eslint-disable-next-line no-unused-vars
-import { sendOtpToEmail, sendOtpToMobile, verifyOtp, resetPassword } from "../services/authService";
+import { forgotPassword } from "../services/authService";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Mail } from "lucide-react";
 
@@ -20,10 +19,10 @@ export default function ForgotPassword() {
     }
     setLoading(true);
     try {
-      await sendOtpToEmail(email);
-      setMessage("Reset link sent (demo). Please check your email inbox.");
-    } catch {
-      setError("Unable to send reset link. Please try again.");
+      const response = await forgotPassword(email);
+      setMessage(response.message || "If an account exists, a password reset link has been sent.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Unable to send reset link. Please try again.");
     } finally {
       setLoading(false);
     }

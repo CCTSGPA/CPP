@@ -144,6 +144,10 @@ export function reverseGeocodeDebounced(latitude, longitude, delay = DEBOUNCE_DE
   });
 }
 
+/**
+ * Get current position with basic settings
+ * For higher accuracy, use getHighAccuracyPosition instead
+ */
 export function getCurrentPosition(options = {}) {
   if (!navigator.geolocation) {
     return Promise.reject(new Error("Geolocation is not supported by your browser."));
@@ -169,10 +173,110 @@ export function getCurrentPosition(options = {}) {
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 30000, // Increased timeout for better GPS lock
         maximumAge: 0,
         ...options,
       }
     );
+  });
+}
+
+/**
+ * Get high accuracy position by watching location updates
+ * Waits for accuracy to be within threshold (default 50 meters) or timeout
+ * @param {Object} options - Configuration options
+ * @param {number} options.targetAccuracy - Desired accuracy in meters (default: 50)
+ * @param {number} options.timeout - Max time to wait in ms (default: 30000)
+ * @param {function} options.onProgress - Callback for accuracy updates
+ */
+export function getHighAccuracyPosition(options = {}) {
+  const {
+    targetAccuracy = 50, // 50 meters target accuracy
+    timeout = 30000,     // 30 seconds max wait
+    onProgress = null,   // Callback: (accuracy, coords) => void
+  } = options;
+
+  if (!navigator.geolocation) {
+    return Promise.reject(new Error("Geolocation is not supported by your browser."));
+  }
+
+  return new Promise((resolve, reject) => {
+    let bestPosition = null;
+    let bestAccuracy = Infinity;
+    let watchId = null;
+    let timeoutId = null;
+
+    const cleanup = () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    };
+
+    const handleSuccess = (position) => {
+      const accuracy = position.coords.accuracy;
+      
+      // Update progress callback
+      if (onProgress) {
+        onProgress(accuracy, position.coords);
+      }
+
+      // Track best position
+      if (accuracy < bestAccuracy) {
+        bestAccuracy = accuracy;
+        bestPosition = position;
+      }
+
+      // If we've achieved target accuracy, resolve immediately
+      if (accuracy <= targetAccuracy) {
+        cleanup();
+        resolve(position);
+      }
+    };
+
+    const handleError = (error) => {
+      cleanup();
+      
+      // If we have any position, return the best one
+      if (bestPosition) {
+        resolve(bestPosition);
+        return;
+      }
+
+      if (error.code === error.PERMISSION_DENIED) {
+        reject(new Error("Location permission denied. Please allow GPS access and try again."));
+        return;
+      }
+      if (error.code === error.POSITION_UNAVAILABLE) {
+        reject(new Error("Location unavailable right now. Please check GPS/network and retry."));
+        return;
+      }
+      reject(new Error("Failed to fetch your current location."));
+    };
+
+    // Start watching position
+    watchId = navigator.geolocation.watchPosition(
+      handleSuccess,
+      handleError,
+      {
+        enableHighAccuracy: true,
+        timeout: timeout,
+        maximumAge: 0,
+      }
+    );
+
+    // Set timeout - return best position we got if not accurate enough
+    timeoutId = setTimeout(() => {
+      cleanup();
+      if (bestPosition) {
+        resolve(bestPosition);
+      } else {
+        reject(new Error("Location request timed out. Please retry."));
+      }
+    }, timeout);
   });
 }

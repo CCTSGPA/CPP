@@ -128,6 +128,13 @@ public class AuthService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> CustomException.notFound("User not found"));
     }
+
+    /**
+     * Check if email exists in database
+     */
+    public boolean checkEmailExists(String email) {
+        return userRepository.findByEmail(email).isPresent();
+    }
 }
 
 

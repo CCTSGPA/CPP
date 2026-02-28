@@ -81,6 +81,28 @@ public class AuthController {
                 "Please complete authentication in frontend with code: " + code
         ));
     }
+
+    /**
+     * Forgot password - request password reset link
+     * POST /api/v1/auth/forgot-password
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<String>> forgotPassword(@RequestBody java.util.Map<String, String> request) {
+        String email = request.get("email");
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(400, "Email is required"));
+        }
+        
+        // For security, don't reveal whether email exists or not
+        // Always return success message regardless
+        // In production: generate token, save to DB, send email
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                "If an account with that email exists, a password reset link has been sent.",
+                email
+        ));
+    }
 }
 
 

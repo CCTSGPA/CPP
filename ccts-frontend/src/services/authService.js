@@ -118,65 +118,33 @@ export function logout() {
   window.location.href = "/login";
 }
 
-// Keep the demo helpers for backwards compatibility during development
-export function makeFakeToken(payload = { sub: "demo", role: "USER" }) {
-  try {
-    const header = btoa(JSON.stringify({ alg: "none", typ: "JWT" }));
-    const body = btoa(JSON.stringify(payload));
-    return `${header}.${body}.`;
-  } catch {
-    return "demo-token";
+/**
+ * Request password reset link
+ * POST /api/v1/auth/forgot-password
+ */
+export async function forgotPassword(email) {
+  const response = await api.post("/auth/forgot-password", { email });
+  return response.data;
+}
+
+/**
+ * Social OAuth login
+ * POST /api/v1/auth/oauth2/login
+ */
+export async function socialSignIn(provider, code) {
+  const response = await api.post("/auth/oauth2/login", { provider, code });
+  
+  const { data } = response.data;
+  
+  if (data.token) {
+    setAuthToken(data.token);
+    setUser({
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      role: data.role
+    });
   }
-}
-
-export async function socialSignIn(provider) {
-  // In production, this would call OAuth provider
-  const payload = { sub: `social:${provider}:user`, role: "USER", provider };
-  const token = makeFakeToken(payload);
-  setAuthToken(token);
-  return token;
-}
-
-// Demo OTP helpers (can be used for password reset flow)
-function _otpKey(identifier) {
-  return `ccts_otp_${identifier}`;
-}
-
-function _generateOtp() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-export async function sendOtpToEmail(email) {
-  const code = _generateOtp();
-  const expires = Date.now() + 5 * 60 * 1000;
-  localStorage.setItem(_otpKey(email), JSON.stringify({ code, expires }));
-  return { success: true, code }; // Return code for testing
-}
-
-export async function sendOtpToMobile(mobile) {
-  const code = _generateOtp();
-  const expires = Date.now() + 5 * 60 * 1000;
-  localStorage.setItem(_otpKey(mobile), JSON.stringify({ code, expires }));
-  return { success: true, code };
-}
-
-export async function verifyOtp(identifier, code) {
-  const raw = localStorage.getItem(_otpKey(identifier));
-  if (!raw) return { success: false, message: "No OTP sent" };
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return { success: false, message: "Invalid stored OTP" };
-  }
-  if (Date.now() > parsed.expires) return { success: false, message: "OTP expired" };
-  if (parsed.code !== code) return { success: false, message: "Incorrect OTP" };
-  localStorage.removeItem(_otpKey(identifier));
-  return { success: true };
-}
-
-// eslint-disable-next-line no-unused-vars
-export async function resetPassword(identifier, newPassword) {
-  // In production, call backend API
-  return { success: true };
+  
+  return response.data;
 }
