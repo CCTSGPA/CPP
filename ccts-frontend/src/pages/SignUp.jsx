@@ -3,13 +3,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Lock, Mail } from "lucide-react";
-import { setAuthToken, makeFakeToken } from "../services/authService";
+import { ArrowLeft, Lock, Mail, User } from "lucide-react";
+import { register as registerUser, setAuthToken, setUser } from "../services/authService";
 import { getTurnstileConfig } from "../services/publicApi";
 import TurnstileWidget from "../components/TurnstileWidget";
 
 const schema = z
   .object({
+    name: z.string().min(2, { message: "Name must be at least 2 characters" }),
     email: z.string().email({ message: "Enter a valid email" }),
     password: z.string().min(8, { message: "Password must be at least 8 characters" }),
     confirmPassword: z.string().min(8, { message: "Confirm password is required" }),
@@ -62,11 +63,30 @@ export default function SignUp() {
     }
     
     try {
-      const fakeToken = makeFakeToken({ sub: data.email, role: "USER" });
-      setAuthToken(fakeToken);
-      navigate("/file-complaint", { replace: true });
-    } catch {
-      setError("Unable to create account. Please try again.");
+      // Call the real registration API
+      const response = await registerUser({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        role: "USER"
+      });
+      
+      if (response.status === 200 && response.data?.token) {
+        // Store token and user info
+        setAuthToken(response.data.token);
+        setUser({
+          id: response.data.id,
+          name: response.data.name,
+          email: response.data.email,
+          role: response.data.role
+        });
+        navigate("/file-complaint", { replace: true });
+      } else {
+        setError(response.message || "Registration failed");
+      }
+    } catch (err) {
+      console.error("Registration error:", err);
+      setError(err.response?.data?.message || "Unable to create account. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -94,6 +114,20 @@ export default function SignUp() {
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 text-center mb-2">Full Name</label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <input
+                {...register("name")}
+                type="text"
+                className="w-full border border-neutral-200 rounded-xl py-3 pl-10 pr-3 focus:outline-none focus:ring-2 focus:ring-gov/30"
+                placeholder="John Doe"
+              />
+            </div>
+            {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>}
+          </div>
+
           <div>
             <label className="block text-sm font-semibold text-slate-700 text-center mb-2">Email</label>
             <div className="relative">

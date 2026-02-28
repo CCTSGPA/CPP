@@ -54,7 +54,7 @@ public class User {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String phone;
 
     private String department;
