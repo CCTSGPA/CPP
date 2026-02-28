@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { login, setUser } from "../services/authService";
 import { initiateGoogleLogin, initiateFacebookLogin, initiateAppleLogin, initiateMicrosoftLogin } from "../services/oauthService";
+import { getTurnstileConfig } from "../services/publicApi";
 import Avatar from "../components/Avatar";
+import TurnstileWidget from "../components/TurnstileWidget";
 import { Mail, Lock } from "lucide-react";
 import { FaGoogle, FaMicrosoft, FaFacebookF, FaApple } from "react-icons/fa";
 
@@ -23,6 +25,10 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [isOnline, setIsOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
   
+  // Turnstile state
+  const [turnstileConfig, setTurnstileConfig] = useState({ enabled: false, siteKey: "" });
+  const [turnstileToken, setTurnstileToken] = useState(null);
+  
   // Redirect back to location that requested auth (default to filing complaint)
   const from = location.state?.from?.pathname || "/file-complaint";
 
@@ -35,7 +41,22 @@ export default function Login() {
 
   const emailWatch = watch('email');
 
-  React.useEffect(() => {
+  // Load Turnstile config on mount
+  useEffect(() => {
+    async function loadTurnstileConfig() {
+      try {
+        const response = await getTurnstileConfig();
+        if (response.success && response.data) {
+          setTurnstileConfig(response.data);
+        }
+      } catch (err) {
+        console.warn("Failed to load Turnstile config:", err);
+      }
+    }
+    loadTurnstileConfig();
+  }, []);
+
+  useEffect(() => {
     const setOnline = () => setIsOnline(true);
     const setOffline = () => setIsOnline(false);
     window.addEventListener("online", setOnline);
@@ -49,6 +70,13 @@ export default function Login() {
   async function onSubmit(data) {
     setLoading(true);
     setError("");
+    
+    // Validate Turnstile if enabled
+    if (turnstileConfig.enabled && !turnstileToken) {
+      setError("Please complete the security verification");
+      setLoading(false);
+      return;
+    }
     
     try {
       // Call the real login API
@@ -216,9 +244,22 @@ export default function Login() {
             )}
           </div>
 
+          {/* Cloudflare Turnstile Widget */}
+          {turnstileConfig.enabled && turnstileConfig.siteKey && (
+            <div className="flex justify-center">
+              <TurnstileWidget
+                siteKey={turnstileConfig.siteKey}
+                onVerify={(token) => setTurnstileToken(token)}
+                onError={() => setTurnstileToken(null)}
+                onExpire={() => setTurnstileToken(null)}
+                theme="light"
+              />
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (turnstileConfig.enabled && !turnstileToken)}
             className="w-full bg-slate-900 text-white py-3 rounded-xl font-semibold hover:bg-slate-800 disabled:opacity-50"
           >
             {loading ? "Signing in..." : "Sign in"}

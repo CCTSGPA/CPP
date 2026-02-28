@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 /**
  * DTO for creating or updating a complaint
  */
+@SuppressWarnings("unused")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -42,6 +43,14 @@ public class ComplaintRequest {
     private String respondentDesignation;
 
     private String respondentDepartment;
+
+    private Boolean isAnonymous;
+
+    private String complainantName;
+
+    private String complainantEmail;
+
+    private String complainantPhone;
 
     private Integer aiSeverityScore;
 

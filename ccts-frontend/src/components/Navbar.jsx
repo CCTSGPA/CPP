@@ -281,6 +281,12 @@ export default function Navbar() {
             <Link to="/contact" className="hover:text-[#6A0DAD]">
               Contact Us
             </Link>
+            <Link to="/transparency" className="hover:text-[#6A0DAD]">
+              Transparency Report
+            </Link>
+            <Link to="/geo-heatmap" className="hover:text-[#6A0DAD]">
+              Heatmap
+            </Link>
           </div>
 
           {/* Mobile secondary links */}
@@ -344,6 +350,12 @@ export default function Navbar() {
               </Link>
               <Link to="/contact" className="text-neutral-700">
                 Contact Us
+              </Link>
+              <Link to="/transparency" className="text-neutral-700">
+                Transparency Report
+              </Link>
+              <Link to="/geo-heatmap" className="text-neutral-700">
+                Heatmap
               </Link>
               <div className="pt-2">
                 {isAuthenticated() ? (

@@ -34,6 +34,10 @@ public class ComplaintResponse {
     private String respondentName;
     private String respondentDesignation;
     private String respondentDepartment;
+    private Boolean isAnonymous;
+    private String complainantName;
+    private String complainantEmail;
+    private String complainantPhone;
     private ComplaintStatus status;
     private String trackingNumber;
     private LocalDateTime createdAt;

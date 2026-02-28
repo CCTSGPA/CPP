@@ -175,6 +175,7 @@ export async function verifyOtp(identifier, code) {
   return { success: true };
 }
 
+// eslint-disable-next-line no-unused-vars
 export async function resetPassword(identifier, newPassword) {
   // In production, call backend API
   return { success: true };

@@ -57,6 +57,19 @@ public class Complaint {
     @Column(name = "respondent_department")
     private String respondentDepartment;
 
+    @Column(name = "is_anonymous")
+    @Builder.Default
+    private Boolean isAnonymous = false;
+
+    @Column(name = "complainant_name")
+    private String complainantName;
+
+    @Column(name = "complainant_email")
+    private String complainantEmail;
+
+    @Column(name = "complainant_phone")
+    private String complainantPhone;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default

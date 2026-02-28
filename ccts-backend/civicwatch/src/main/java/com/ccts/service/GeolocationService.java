@@ -43,7 +43,7 @@ public class GeolocationService {
                 return cachedLocation.response();
             }
 
-            URI uri = UriComponentsBuilder.fromHttpUrl(NOMINATIM_BASE_URL)
+            URI uri = UriComponentsBuilder.fromUriString(NOMINATIM_BASE_URL)
                     .queryParam("lat", latitude)
                     .queryParam("lon", longitude)
                     .queryParam("format", "jsonv2")

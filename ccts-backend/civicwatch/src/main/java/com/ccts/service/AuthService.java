@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 /**
  * Service for authentication operations
  */
+@SuppressWarnings({"unused", "null"})
 @Service
 @RequiredArgsConstructor
 public class AuthService {

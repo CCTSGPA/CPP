@@ -23,6 +23,7 @@ import java.util.List;
  * Controller for complaint endpoints (user-facing)
  * Base path: /api/v1/complaints
  */
+@SuppressWarnings("unused")
 @RestController
 @RequestMapping("/api/v1/complaints")
 @RequiredArgsConstructor

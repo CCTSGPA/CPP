@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 /**
  * Service for OAuth2 authentication with Google, Facebook, Apple, and Microsoft
  */
+@SuppressWarnings("null")
 @Service
 @RequiredArgsConstructor
 @Slf4j

@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Lock, Mail } from "lucide-react";
 import { setAuthToken, makeFakeToken } from "../services/authService";
+import { getTurnstileConfig } from "../services/publicApi";
+import TurnstileWidget from "../components/TurnstileWidget";
 
 const schema = z
   .object({
@@ -28,10 +30,37 @@ export default function SignUp() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  
+  // Turnstile state
+  const [turnstileConfig, setTurnstileConfig] = useState({ enabled: false, siteKey: "" });
+  const [turnstileToken, setTurnstileToken] = useState(null);
+
+  // Load Turnstile config on mount
+  useEffect(() => {
+    async function loadTurnstileConfig() {
+      try {
+        const response = await getTurnstileConfig();
+        if (response.success && response.data) {
+          setTurnstileConfig(response.data);
+        }
+      } catch (err) {
+        console.warn("Failed to load Turnstile config:", err);
+      }
+    }
+    loadTurnstileConfig();
+  }, []);
 
   async function onSubmit(data) {
     setLoading(true);
     setError("");
+    
+    // Validate Turnstile if enabled
+    if (turnstileConfig.enabled && !turnstileToken) {
+      setError("Please complete the security verification");
+      setLoading(false);
+      return;
+    }
+    
     try {
       const fakeToken = makeFakeToken({ sub: data.email, role: "USER" });
       setAuthToken(fakeToken);
@@ -109,9 +138,22 @@ export default function SignUp() {
             )}
           </div>
 
+          {/* Cloudflare Turnstile Widget */}
+          {turnstileConfig.enabled && turnstileConfig.siteKey && (
+            <div className="flex justify-center">
+              <TurnstileWidget
+                siteKey={turnstileConfig.siteKey}
+                onVerify={(token) => setTurnstileToken(token)}
+                onError={() => setTurnstileToken(null)}
+                onExpire={() => setTurnstileToken(null)}
+                theme="light"
+              />
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (turnstileConfig.enabled && !turnstileToken)}
             className="w-full bg-slate-900 text-white py-3 rounded-xl font-semibold hover:bg-slate-800 disabled:opacity-50"
           >
             {loading ? "Creating account..." : "Create account"}

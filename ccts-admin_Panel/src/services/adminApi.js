@@ -89,3 +89,21 @@ export const fetchAdminTimeline = async ({ page = 0, size = 500 } = {}) => {
   })
   return parseApiResponse(response)
 }
+
+// ==================== PUBLIC ENDPOINTS (No Auth) ====================
+
+export const fetchPublicTransparencyStats = async () => {
+  const response = await fetch('/api/v1/public/transparency-stats')
+  return parseApiResponse(response)
+}
+
+export const fetchPublicGeoHeatmap = async ({ category, department, dateFrom, dateTo } = {}) => {
+  const params = new URLSearchParams()
+  if (category) params.set('category', category)
+  if (department) params.set('department', department)
+  if (dateFrom) params.set('dateFrom', dateFrom)
+  if (dateTo) params.set('dateTo', dateTo)
+  
+  const response = await fetch(`/api/v1/public/geo-heatmap?${params.toString()}`)
+  return parseApiResponse(response)
+}

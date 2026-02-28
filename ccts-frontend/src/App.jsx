@@ -23,6 +23,8 @@ import AdminForgotPassword from "./admin/AdminForgotPassword";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 import OAuthCallback from "./components/OAuthCallback";
+import TransparencyReport from "./pages/TransparencyReport";
+import GeoHeatmap from "./pages/GeoHeatmap";
 // ...existing code...
 
 export default function App() {
@@ -37,6 +39,8 @@ export default function App() {
               <Route path="/file-complaint" element={<FileComplaint />} />
             </Route>
             <Route path="/track-complaint" element={<TrackComplaint />} />
+            <Route path="/transparency-report" element={<TransparencyReport />} />
+            <Route path="/geo-heatmap" element={<GeoHeatmap />} />
             <Route path="/upload-evidence" element={<UploadEvidence />} />
             <Route path="/download-forms" element={<DownloadForms />} />
             <Route path="/about" element={<About />} />

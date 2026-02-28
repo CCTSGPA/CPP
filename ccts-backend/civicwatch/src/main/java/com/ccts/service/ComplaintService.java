@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 /**
  * Service for complaint operations
  */
+@SuppressWarnings({"unused", "null"})
 @Service
 @RequiredArgsConstructor
 public class ComplaintService {
@@ -52,6 +53,10 @@ public class ComplaintService {
                 .respondentName(request.getRespondentName())
                 .respondentDesignation(request.getRespondentDesignation())
                 .respondentDepartment(request.getRespondentDepartment())
+                .isAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false)
+                .complainantName(request.getComplainantName())
+                .complainantEmail(request.getComplainantEmail())
+                .complainantPhone(request.getComplainantPhone())
                 .aiSeverityScore(request.getAiSeverityScore())
                 .aiSummary(request.getAiSummary())
                 .status(ComplaintStatus.SUBMITTED)
@@ -182,6 +187,10 @@ public class ComplaintService {
                 .respondentName(complaint.getRespondentName())
                 .respondentDesignation(complaint.getRespondentDesignation())
                 .respondentDepartment(complaint.getRespondentDepartment())
+                .isAnonymous(complaint.getIsAnonymous())
+                .complainantName(complaint.getComplainantName())
+                .complainantEmail(complaint.getComplainantEmail())
+                .complainantPhone(complaint.getComplainantPhone())
                 .status(complaint.getStatus())
                 .trackingNumber(complaint.getTrackingNumber())
                 .createdAt(complaint.getCreatedAt())

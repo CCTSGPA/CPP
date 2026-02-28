@@ -125,6 +125,7 @@ export async function updateComplaintStatusLegacy(id, data) {
   return updateComplaintStatus(id, newStatus);
 }
 
+// eslint-disable-next-line no-unused-vars
 export async function assignDepartment(id, department) {
   // For now, this is handled differently in admin
   return { success: true };

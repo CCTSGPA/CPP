@@ -25,6 +25,7 @@ import java.util.UUID;
  * Controller for file upload operations
  * Base path: /api/v1/files
  */
+@SuppressWarnings("unused")
 @RestController
 @RequestMapping("/api/v1/files")
 public class FileController {

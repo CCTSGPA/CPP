@@ -43,6 +43,7 @@ public class SecurityConfig {
             .cors(cors -> {})
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers("/api/v1/public/**").permitAll()
                 .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/api/v1/complaints/track/**").permitAll()
                 .requestMatchers("/api/v1/location/**").hasAnyRole("USER", "OFFICER", "ADMIN")

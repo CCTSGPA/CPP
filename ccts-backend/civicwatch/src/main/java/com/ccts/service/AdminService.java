@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 /**
  * Service for admin operations
  */
+@SuppressWarnings("null")
 @Service
 @RequiredArgsConstructor
 public class AdminService {

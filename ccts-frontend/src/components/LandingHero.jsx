@@ -1,6 +1,7 @@
 import React from "react";
 import { ShieldCheck, Clock, Gavel } from "lucide-react";
 
+// eslint-disable-next-line no-unused-vars
 function Feature({ Icon, title, desc }) {
   return (
     <div className="flex flex-col items-center max-w-xs text-center">
