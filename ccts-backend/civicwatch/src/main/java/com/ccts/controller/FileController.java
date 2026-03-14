@@ -9,6 +9,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.ccts.service.NotificationService;
+import com.ccts.service.OtpService;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +31,14 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/files")
 public class FileController {
+
+    private final NotificationService notificationService;
+    private final OtpService otpService;
+
+    public FileController(NotificationService notificationService, OtpService otpService) {
+        this.notificationService = notificationService;
+        this.otpService = otpService;
+    }
 
     @Value("${file.upload-dir:./uploads/evidence}")
     private String uploadDir;
@@ -82,6 +92,22 @@ public class FileController {
             response.put("url", fileUrl);
             response.put("filename", filename);
             response.put("originalName", originalFilename != null ? originalFilename : "unknown");
+
+            // notify user by email and optionally send OTP
+            String userEmail = null;
+            if (userDetails != null) {
+                userEmail = userDetails.getUsername();
+            }
+            if (userEmail != null && !userEmail.isBlank()) {
+                notificationService.sendEmail("File Uploaded Successfully",
+                                            "Your file has been saved at " + fileUrl,
+                                            userEmail);
+            }
+            // if the user stored a phone number in their profile we could send OTP here
+            // for demo, send OTP to the same email address as key
+            if (userEmail != null && !userEmail.isBlank()) {
+                otpService.sendOtp(null, userEmail);
+            }
 
             return ResponseEntity.ok(ApiResponse.success("File uploaded successfully", response));
 

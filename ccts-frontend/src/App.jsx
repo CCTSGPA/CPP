@@ -17,6 +17,7 @@ import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import AdminDashboard from "./pages/AdminDashboard";
 import ForgotPassword from "./pages/ForgotPassword";
+import OtpLogin from "./pages/OtpLogin";
 import AdminLogin from "./admin/AdminLogin";
 import AdminSignUp from "./admin/AdminSignUp";
 import AdminForgotPassword from "./admin/AdminForgotPassword";
@@ -50,7 +51,10 @@ export default function App() {
             <Route path="/faqs" element={<FAQs />} />
             <Route path="/help" element={<Help />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />            <Route path="/forgot-password" element={<ForgotPassword/>} />            <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route path="/otp-login" element={<OtpLogin />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword/>} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
 
             {/* OAuth Callback Routes */}
             <Route path="/auth/google/callback" element={<OAuthCallback />} />

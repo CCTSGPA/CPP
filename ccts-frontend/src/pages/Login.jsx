@@ -270,7 +270,10 @@ export default function Login() {
               Forgot password?
             </a>
             <span className="text-neutral-600">
-              Need an account?{" "}
+              <a className="text-slate-900 font-semibold" href="/otp-login">
+                Login with OTP
+              </a>
+              {" • Need an account? "}
               <a className="text-slate-900 font-semibold" href="/signup">
                 Sign up
               </a>

@@ -43,12 +43,12 @@ jwt:
 twilio:
   account-sid: ${TWILIO_ACCOUNT_SID:ACe9170ab8669a90f8c4b5fb48e5c21b39}
   auth-token: ${TWILIO_AUTH_TOKEN:fad7e2acbe847f61250ccf52354040cc}
-  phone-number: ${TWILIO_PHONE_NUMBER:+1234567890}
-  messaging-service-sid: ${TWILIO_MESSAGING_SERVICE_SID:}
+  phone-number: ${TWILIO_PHONE_NUMBER:+19062622111}
+  messaging-service-sid: ${TWILIO_MESSAGING_SERVICE_SID:SMbaab2cc73fea2842703c2da94d12e8f3}
 
 # SendGrid Configuration
 sendgrid:
-  api-key: ${SENDGRID_API_KEY:your_sendgrid_api_key}
+  api-key: ${SENDGRID_API_KEY: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}
   from-email: ${SENDGRID_FROM_EMAIL:noreply@civicwatch.com}
   from-name: ${SENDGRID_FROM_NAME:CivicWatch}
 

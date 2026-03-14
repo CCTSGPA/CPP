@@ -119,6 +119,24 @@ export function logout() {
 }
 
 /**
+ * Send an OTP to phone or email
+ * POST /api/v1/auth/send-otp
+ */
+export async function sendOtp(phone, email) {
+  const response = await api.post("/auth/send-otp", { phone, email });
+  return response.data;
+}
+
+/**
+ * Verify OTP code
+ * POST /api/v1/auth/verify-otp
+ */
+export async function verifyOtp(key, code) {
+  const response = await api.post("/auth/verify-otp", { key, code });
+  return response.data;
+}
+
+/**
  * Request password reset link
  * POST /api/v1/auth/forgot-password
  */

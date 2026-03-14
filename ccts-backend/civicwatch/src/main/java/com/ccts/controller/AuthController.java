@@ -7,6 +7,7 @@ import com.ccts.dto.OAuth2LoginRequest;
 import com.ccts.dto.RegisterRequest;
 import com.ccts.service.AuthService;
 import com.ccts.service.OAuth2Service;
+import com.ccts.service.OtpService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final OAuth2Service oAuth2Service;
+    private final OtpService otpService;
 
     /**
      * Register a new user
@@ -102,6 +104,36 @@ public class AuthController {
                 "If an account with that email exists, a password reset link has been sent.",
                 email
         ));
+    }
+
+    /**
+     * Send OTP to a phone number or email address
+     * POST /api/v1/auth/send-otp
+     * Body: { "phone": "+917020057494", "email": "user@example.com" }
+     */
+    @PostMapping("/send-otp")
+    public ResponseEntity<ApiResponse<String>> sendOtp(@RequestBody java.util.Map<String, String> request) {
+        String phone = request.get("phone");
+        String email = request.get("email");
+        if ((phone == null || phone.isBlank()) && (email == null || email.isBlank())) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(400, "Phone or email must be provided"));
+        }
+        otpService.sendOtp(phone, email);
+        return ResponseEntity.ok(ApiResponse.success("OTP sent", phone != null && !phone.isBlank() ? phone : email));
+    }
+
+    /**
+     * Verify OTP code
+     * POST /api/v1/auth/verify-otp
+     * Body: { "key": "+917020057494 or user@example.com", "code": "123456" }
+     */
+    @PostMapping("/verify-otp")
+    public ResponseEntity<ApiResponse<Boolean>> verifyOtp(@RequestBody java.util.Map<String, String> request) {
+        String key = request.get("key");
+        String code = request.get("code");
+        boolean valid = otpService.verifyOtp(key, code);
+        return ResponseEntity.ok(ApiResponse.success(valid ? "OTP valid" : "OTP invalid", valid));
     }
 }
 

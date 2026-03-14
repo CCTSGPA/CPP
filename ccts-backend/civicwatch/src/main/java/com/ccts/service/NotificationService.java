@@ -180,7 +180,7 @@ public class NotificationService {
     /**
      * Send email using SendGrid
      */
-    private void sendEmail(String subject, String body, String toEmail) {
+    public void sendEmail(String subject, String body, String toEmail) {
         try {
             // Check if SendGrid API key is configured
             if (sendgridApiKey == null || sendgridApiKey.equals("your_sendgrid_api_key")) {
@@ -225,7 +225,7 @@ public class NotificationService {
     /**
      * Send SMS using Twilio
      */
-    private void sendSMS(String message, String toPhoneNumber) {
+    public void sendSMS(String message, String toPhoneNumber) {
         try {
             // Check if Twilio is configured
             if (twilioAccountSid == null || twilioAccountSid.equals("your_account_sid") ||
