@@ -50,4 +50,13 @@ export async function getTurnstileConfig() {
   return response.data;
 }
 
+/**
+ * Get admin-managed downloadable forms
+ * GET /api/v1/public/forms
+ */
+export async function getPublicForms() {
+  const response = await publicApi.get("/forms");
+  return response.data;
+}
+
 export default publicApi;

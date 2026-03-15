@@ -48,6 +48,25 @@ public class Complaint {
     @Column(name = "evidence_url")
     private String evidenceUrl;
 
+    @Column(name = "evidence_file_name")
+    private String evidenceFileName;
+
+    @Column(name = "evidence_upload_date")
+    private LocalDateTime evidenceUploadDate;
+
+    @Column(name = "evidence_verification_status")
+    private String evidenceVerificationStatus;
+
+    @Column(name = "evidence_review_status")
+    private String evidenceReviewStatus;
+
+    @Column(name = "evidence_used_in_investigation")
+    @Builder.Default
+    private Boolean evidenceUsedInInvestigation = false;
+
+    @Column(name = "evidence_sha256", length = 128)
+    private String evidenceSha256;
+
     @Column(name = "respondent_name")
     private String respondentName;
 
@@ -105,6 +124,10 @@ public class Complaint {
 
     @Column(name = "tracking_number", unique = true)
     private String trackingNumber;
+
+    @Column(name = "progress_percentage")
+    @Builder.Default
+    private Integer progressPercentage = 10;
 }
 
 

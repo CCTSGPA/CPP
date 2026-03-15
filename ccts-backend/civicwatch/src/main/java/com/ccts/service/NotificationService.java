@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 /**
  * Service for sending notifications via Email, SMS, and Push
@@ -45,6 +46,9 @@ public class NotificationService {
     @Value("${sendgrid.from-name}")
     private String fromName;
 
+    @Value("${app.base-url:http://localhost:5173}")
+    private String appBaseUrl;
+
     @PostConstruct
     public void initTwilio() {
         if (twilioAccountSid != null && !twilioAccountSid.equals("your_account_sid") &&
@@ -63,32 +67,29 @@ public class NotificationService {
             return;
         }
 
-        String subject = "New Complaint Submitted - " + complaint.getTrackingNumber();
-        String message = String.format(
-            "A new complaint has been submitted:\n\n" +
-            "Tracking Number: %s\n" +
-            "Title: %s\n" +
-            "Category: %s\n" +
-            "Location: %s\n" +
-            "Description: %s\n" +
-            "Submitted by: %s\n" +
-            "Date: %s",
-            complaint.getTrackingNumber(),
-            complaint.getTitle(),
-            complaint.getCategory(),
-            formatLocation(complaint),
-            complaint.getDescription(),
-            complaint.getUserName(),
-            complaint.getCreatedAt()
-        );
+        String subject = "Complaint received - " + complaint.getTrackingNumber();
+        String message = buildNotificationMessage(complaint, "Complaint received", "Your complaint has been recorded and queued for review.");
+        String trackingLink = buildTrackingLink(complaint.getTrackingNumber());
 
         // Send email to admin
         sendEmail(subject, message, notificationProperties.getAdminEmail());
+
+        // Send email to complainant if available
+        if (complaint.getComplainantEmail() != null && !complaint.getComplainantEmail().isBlank()) {
+            sendEmail(subject, message, complaint.getComplainantEmail());
+        } else if (complaint.getUserEmail() != null && !complaint.getUserEmail().isBlank()) {
+            sendEmail(subject, message, complaint.getUserEmail());
+        }
 
         // Send SMS to admin if phone is configured
         if (notificationProperties.getAdminPhone() != null && 
             !notificationProperties.getAdminPhone().equals("+1234567890")) {
             sendSMS(formatSMSMessage(complaint), notificationProperties.getAdminPhone());
+        }
+
+        // Send SMS to complainant if phone is available
+        if (complaint.getComplainantPhone() != null && !complaint.getComplainantPhone().isBlank()) {
+            sendSMS("CivicWatch: Complaint " + complaint.getTrackingNumber() + " received. Track: " + trackingLink, complaint.getComplainantPhone());
         }
 
         // Send push notification (placeholder)
@@ -105,26 +106,22 @@ public class NotificationService {
             return;
         }
 
-        String subject = "Complaint Status Updated - " + complaint.getTrackingNumber();
-        String message = String.format(
-            "Complaint status has been updated:\n\n" +
-            "Tracking Number: %s\n" +
-            "Title: %s\n" +
-            "New Status: %s\n" +
-            "Notes: %s\n" +
-            "Updated at: %s",
-            complaint.getTrackingNumber(),
-            complaint.getTitle(),
-            newStatus,
-            notes != null ? notes : "No notes provided",
-            complaint.getUpdatedAt()
+        String humanStatus = toHumanStatus(newStatus);
+        String subject = "Complaint status update - " + complaint.getTrackingNumber();
+        String message = buildNotificationMessage(
+            complaint,
+            humanStatus,
+            notes != null && !notes.isBlank() ? notes : "Your complaint status has been updated."
         );
 
         // Send email to admin and complaint owner
         sendEmail(subject, message, notificationProperties.getAdminEmail());
-        
-        // TODO: Send email to user who submitted complaint (need user email service)
-        // For now, just send to admin
+
+        if (complaint.getComplainantEmail() != null && !complaint.getComplainantEmail().isBlank()) {
+            sendEmail(subject, message, complaint.getComplainantEmail());
+        } else if (complaint.getUserEmail() != null && !complaint.getUserEmail().isBlank()) {
+            sendEmail(subject, message, complaint.getUserEmail());
+        }
 
         // Send SMS to admin
         if (notificationProperties.getAdminPhone() != null && 
@@ -132,8 +129,12 @@ public class NotificationService {
             sendSMS(formatSMSMessage(complaint, newStatus), notificationProperties.getAdminPhone());
         }
 
+        if (complaint.getComplainantPhone() != null && !complaint.getComplainantPhone().isBlank()) {
+            sendSMS(formatSMSMessage(complaint, humanStatus), complaint.getComplainantPhone());
+        }
+
         // Send push notification
-        sendPushNotification("Status Update", "Complaint " + complaint.getTrackingNumber() + " status is now " + newStatus);
+        sendPushNotification("Status Update", "Complaint " + complaint.getTrackingNumber() + " status is now " + humanStatus);
     }
 
     /**
@@ -304,10 +305,61 @@ public class NotificationService {
 
     private String formatSMSMessage(ComplaintResponse complaint, String status) {
         return String.format(
-            "CivicWatch Update: Complaint %s status changed to %s",
+            "CivicWatch Update: Complaint %s status changed to %s. Track: %s",
             complaint.getTrackingNumber(),
-            status
+            status,
+            buildTrackingLink(complaint.getTrackingNumber())
         );
+    }
+
+    public String getNotificationChannels(ComplaintResponse complaint) {
+        List<String> channels = new java.util.ArrayList<>();
+        if ((complaint.getComplainantEmail() != null && !complaint.getComplainantEmail().isBlank())
+            || (complaint.getUserEmail() != null && !complaint.getUserEmail().isBlank())) {
+            channels.add("EMAIL");
+        }
+        if (complaint.getComplainantPhone() != null && !complaint.getComplainantPhone().isBlank()) {
+            channels.add("SMS");
+        }
+        return channels.isEmpty() ? "NONE" : String.join(",", channels);
+    }
+
+    private String buildNotificationMessage(ComplaintResponse complaint, String statusLabel, String notes) {
+        String trackingLink = buildTrackingLink(complaint.getTrackingNumber());
+        return String.format(
+            "Complaint ID: %s\n" +
+            "Current Status: %s\n" +
+            "Department: %s\n" +
+            "Assigned Officer/Department: %s\n" +
+            "Notes: %s\n" +
+            "Track Complaint: %s",
+            complaint.getTrackingNumber(),
+            statusLabel,
+            complaint.getRespondentDepartment() != null ? complaint.getRespondentDepartment() : "Unassigned",
+            complaint.getAssignedOfficerName() != null ? complaint.getAssignedOfficerName() : "Department desk",
+            notes,
+            trackingLink
+        );
+    }
+
+    private String buildTrackingLink(String trackingNumber) {
+        return appBaseUrl + "/track-complaint?ref=" + trackingNumber;
+    }
+
+    private String toHumanStatus(String status) {
+        if (status == null) {
+            return "Status updated";
+        }
+        return switch (status) {
+            case "SUBMITTED" -> "Complaint received";
+            case "UNDER_REVIEW" -> "Under review";
+            case "EVIDENCE_VERIFICATION_IN_PROGRESS" -> "Evidence verification in progress";
+            case "INVESTIGATION_STARTED" -> "Investigation started";
+            case "APPROVED" -> "Approved";
+            case "REJECTED" -> "Rejected";
+            case "RESOLVED" -> "Resolved";
+            default -> status.replace('_', ' ');
+        };
     }
 
     private String truncate(String text, int maxLength) {

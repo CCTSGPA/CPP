@@ -43,11 +43,12 @@ export const fetchAdminComplaintById = async (id) => {
   return parseApiResponse(response)
 }
 
-export const updateAdminComplaintStatus = async (id, status, adminNotes = null) => {
+export const updateAdminComplaintStatus = async (id, payload) => {
+  const body = typeof payload === 'string' ? { status: payload } : payload
   const response = await fetch(`/api/v1/admin/complaints/${id}/status`, {
     method: 'PUT',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ status, adminNotes })
+    body: JSON.stringify(body)
   })
   return parseApiResponse(response)
 }
@@ -85,6 +86,47 @@ export const fetchAdminEvidence = async ({ page = 0, size = 500 } = {}) => {
 export const fetchAdminTimeline = async ({ page = 0, size = 500 } = {}) => {
   const params = new URLSearchParams({ page: String(page), size: String(size) })
   const response = await fetch(`/api/v1/admin/timeline?${params.toString()}`, {
+    headers: getAuthHeaders()
+  })
+  return parseApiResponse(response)
+}
+
+export const fetchAdminComplaintTimeline = async ({ complaintId, page = 0, size = 50 } = {}) => {
+  const params = new URLSearchParams({ page: String(page), size: String(size) })
+  const response = await fetch(`/api/v1/admin/complaints/${complaintId}/timeline?${params.toString()}`, {
+    headers: getAuthHeaders()
+  })
+  return parseApiResponse(response)
+}
+
+export const fetchAdminForms = async () => {
+  const response = await fetch('/api/v1/admin/forms', {
+    headers: getAuthHeaders()
+  })
+  return parseApiResponse(response)
+}
+
+export const createAdminForm = async (payload) => {
+  const response = await fetch('/api/v1/admin/forms', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload)
+  })
+  return parseApiResponse(response)
+}
+
+export const updateAdminForm = async (id, payload) => {
+  const response = await fetch(`/api/v1/admin/forms/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload)
+  })
+  return parseApiResponse(response)
+}
+
+export const deleteAdminForm = async (id) => {
+  const response = await fetch(`/api/v1/admin/forms/${id}`, {
+    method: 'DELETE',
     headers: getAuthHeaders()
   })
   return parseApiResponse(response)

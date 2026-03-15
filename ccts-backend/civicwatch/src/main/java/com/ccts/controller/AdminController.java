@@ -4,6 +4,8 @@ import com.ccts.dto.AdminUserProfileResponse;
 import com.ccts.dto.AdminUserSummaryResponse;
 import com.ccts.dto.ApiResponse;
 import com.ccts.dto.ComplaintResponse;
+import com.ccts.dto.DownloadFormRequest;
+import com.ccts.dto.DownloadFormResponse;
 import com.ccts.dto.EvidenceMetadataResponse;
 import com.ccts.dto.StatsResponse;
 import com.ccts.dto.StatusUpdateRequest;
@@ -12,6 +14,7 @@ import com.ccts.model.ComplaintStatus;
 import com.ccts.model.User;
 import com.ccts.repository.UserRepository;
 import com.ccts.service.AdminService;
+import com.ccts.service.DownloadFormService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -35,6 +38,7 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AdminService adminService;
+    private final DownloadFormService downloadFormService;
     private final UserRepository userRepository;
 
     /**
@@ -171,5 +175,32 @@ public class AdminController {
             @PageableDefault(size = 20) Pageable pageable) {
         Page<TimelineEntryResponse> timeline = adminService.getTimelineByComplaintId(id, pageable);
         return ResponseEntity.ok(ApiResponse.success("Complaint timeline retrieved", timeline));
+    }
+
+    @GetMapping("/forms")
+    public ResponseEntity<ApiResponse<java.util.List<DownloadFormResponse>>> getForms() {
+        return ResponseEntity.ok(ApiResponse.success("Forms retrieved", downloadFormService.getAllForms()));
+    }
+
+    @PostMapping("/forms")
+    public ResponseEntity<ApiResponse<DownloadFormResponse>> createForm(
+            @Valid @RequestBody DownloadFormRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User admin = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
+        return ResponseEntity.ok(ApiResponse.success("Form created", downloadFormService.createForm(request, admin)));
+    }
+
+    @PutMapping("/forms/{id}")
+    public ResponseEntity<ApiResponse<DownloadFormResponse>> updateForm(
+            @PathVariable Long id,
+            @Valid @RequestBody DownloadFormRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Form updated", downloadFormService.updateForm(id, request)));
+    }
+
+    @DeleteMapping("/forms/{id}")
+    public ResponseEntity<ApiResponse<String>> deleteForm(@PathVariable Long id) {
+        downloadFormService.deleteForm(id);
+        return ResponseEntity.ok(ApiResponse.success("Form deleted", "deleted"));
     }
 }

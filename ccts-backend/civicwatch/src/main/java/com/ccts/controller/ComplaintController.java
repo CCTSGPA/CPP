@@ -3,6 +3,7 @@ package com.ccts.controller;
 import com.ccts.dto.ApiResponse;
 import com.ccts.dto.ComplaintRequest;
 import com.ccts.dto.ComplaintResponse;
+import com.ccts.dto.ComplaintTrackingDetailsResponse;
 import com.ccts.model.User;
 import com.ccts.service.AuthService;
 import com.ccts.service.ComplaintService;
@@ -89,6 +90,18 @@ public class ComplaintController {
         ComplaintResponse response = complaintService.getComplaintByTrackingNumberPublic(trackingNumber);
         
         return ResponseEntity.ok(ApiResponse.success("Complaint tracked successfully", response));
+    }
+
+    /**
+     * Track complaint with timeline, activities, evidence and progress (public endpoint)
+     * GET /api/v1/complaints/track/{trackingNumber}/details
+     */
+    @GetMapping("/track/{trackingNumber}/details")
+    public ResponseEntity<ApiResponse<ComplaintTrackingDetailsResponse>> trackComplaintDetails(
+            @PathVariable String trackingNumber) {
+
+        ComplaintTrackingDetailsResponse response = complaintService.getComplaintTrackingDetails(trackingNumber);
+        return ResponseEntity.ok(ApiResponse.success("Complaint tracking details retrieved", response));
     }
 }
 

@@ -21,6 +21,11 @@ public class StatusUpdateRequest {
 
     private String rejectionReason;
     private String adminNotes;
+    private String publicMessage;
+    private Integer progressPercentage;
+    private String evidenceVerificationStatus;
+    private String evidenceReviewStatus;
+    private Boolean usedInInvestigation;
 }
 
 

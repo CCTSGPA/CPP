@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
+import { getTransparencyStats } from "../services/publicApi";
 import {
   BarChart,
   Bar,
@@ -26,8 +27,7 @@ export default function TransparencyReport() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch("/api/v1/public/transparency-stats");
-        const data = await response.json();
+        const data = await getTransparencyStats();
         if (data.status === "success") {
           setStats(data.data);
         } else {
@@ -42,6 +42,8 @@ export default function TransparencyReport() {
     };
 
     fetchStats();
+    const refreshTimer = setInterval(fetchStats, 20000);
+    return () => clearInterval(refreshTimer);
   }, []);
 
   if (loading) {
@@ -130,7 +132,7 @@ export default function TransparencyReport() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
           <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-purple-100 rounded-xl">
@@ -184,6 +186,34 @@ export default function TransparencyReport() {
               <div>
                 <p className="text-3xl font-bold text-gray-800">{stats?.categoriesTracked || 0}</p>
                 <p className="text-sm text-gray-500">Categories Tracked</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-green-100 rounded-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-gray-800">{stats?.complaintsApproved || 0}</p>
+                <p className="text-sm text-gray-500">Complaints Approved</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-red-100 rounded-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.536-10.95a1 1 0 10-1.414-1.414L10 7.757 7.879 5.636a1 1 0 10-1.415 1.414L8.586 9.17l-2.122 2.122a1 1 0 001.415 1.415L10 10.585l2.121 2.122a1 1 0 001.414-1.415L11.414 9.17l2.122-2.121z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-gray-800">{stats?.complaintsRejected || 0}</p>
+                <p className="text-sm text-gray-500">Complaints Rejected</p>
               </div>
             </div>
           </div>

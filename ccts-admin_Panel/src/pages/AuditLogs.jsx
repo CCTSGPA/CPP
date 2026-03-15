@@ -30,10 +30,19 @@ const AuditLogs = () => {
         const content = data?.content || []
         setAuditLogs(content.map((item) => ({
           id: item.id,
-          action: 'STATUS_CHANGE',
+          action: item.activityType || 'STATUS_CHANGE',
           admin: item.changedBy || 'System',
           target: item.trackingNumber || `Complaint-${item.complaintId}`,
-          details: item.comment || `${item.oldStatus || 'N/A'} → ${item.newStatus || 'N/A'}`,
+          details: [
+            item.title,
+            item.comment,
+            item.publicSummary,
+            item.oldStatus || item.newStatus ? `${item.oldStatus || 'N/A'} -> ${item.newStatus || 'N/A'}` : null,
+            item.evidenceVerificationStatus ? `Integrity: ${item.evidenceVerificationStatus}` : null,
+            item.evidenceReviewStatus ? `Review: ${item.evidenceReviewStatus}` : null,
+            item.usedInInvestigation === true ? 'Used in investigation' : null,
+            item.notificationChannels ? `Notified: ${item.notificationChannels}` : null
+          ].filter(Boolean).join(' | '),
           ip: 'N/A',
           device: 'N/A',
           timestamp: item.timestamp ? new Date(item.timestamp).toLocaleString() : '-',

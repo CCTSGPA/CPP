@@ -4,10 +4,7 @@ import {
   Filter,
   Download,
   Eye,
-  Edit,
-  AlertTriangle,
   Clock,
-  CheckCircle,
   XCircle,
   ChevronDown,
   RefreshCw,
@@ -16,13 +13,12 @@ import {
   Calendar,
   Building2,
   User,
-  MessageSquare,
   ArrowUpCircle,
-  Hash,
   Activity
 } from 'lucide-react'
 import {
   fetchAdminComplaints,
+  fetchAdminComplaintTimeline,
   fetchAdminUserProfile,
   updateAdminComplaintStatus
 } from '../services/adminApi'
@@ -31,14 +27,15 @@ const StatusBadge = ({ status }) => {
   const styles = {
     SUBMITTED: 'bg-blue-100 text-blue-800',
     UNDER_REVIEW: 'bg-yellow-100 text-yellow-800',
+    EVIDENCE_VERIFICATION_IN_PROGRESS: 'bg-indigo-100 text-indigo-800',
+    INVESTIGATION_STARTED: 'bg-violet-100 text-violet-800',
     APPROVED: 'bg-green-100 text-green-800',
     RESOLVED: 'bg-green-100 text-green-800',
-    REJECTED: 'bg-red-100 text-red-800',
-    ESCALATED: 'bg-purple-100 text-purple-800'
+    REJECTED: 'bg-red-100 text-red-800'
   }
   return (
     <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
-      {status?.replace('_', ' ')}
+      {String(status || '').replace(/_/g, ' ')}
     </span>
   )
 }
@@ -72,6 +69,16 @@ const ComplaintManagement = () => {
   const [showFilters, setShowFilters] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [selectedUserProfile, setSelectedUserProfile] = useState(null)
+  const [complaintTimeline, setComplaintTimeline] = useState([])
+  const [updateDraft, setUpdateDraft] = useState({
+    status: 'SUBMITTED',
+    adminNotes: '',
+    publicMessage: '',
+    progressPercentage: 10,
+    evidenceVerificationStatus: 'RECEIVED',
+    evidenceReviewStatus: 'UNDER_REVIEW',
+    usedInInvestigation: false
+  })
 
   useEffect(() => {
     const loadComplaints = async () => {
@@ -102,6 +109,16 @@ const ComplaintManagement = () => {
 
   const viewComplaintDetails = async (complaint) => {
     setSelectedComplaint(complaint)
+    setUpdateDraft({
+      status: complaint.status || 'SUBMITTED',
+      adminNotes: '',
+      publicMessage: '',
+      progressPercentage: complaint.progressPercentage ?? 10,
+      evidenceVerificationStatus: complaint.evidenceVerificationStatus || 'RECEIVED',
+      evidenceReviewStatus: complaint.evidenceReviewStatus || 'UNDER_REVIEW',
+      usedInInvestigation: !!complaint.evidenceUsedInInvestigation
+    })
+
     if (complaint?.userId) {
       try {
         const profile = await fetchAdminUserProfile(complaint.userId)
@@ -112,21 +129,49 @@ const ComplaintManagement = () => {
     } else {
       setSelectedUserProfile(null)
     }
+
+    try {
+      const timeline = await fetchAdminComplaintTimeline({ complaintId: complaint.id, page: 0, size: 100 })
+      setComplaintTimeline(timeline?.content || [])
+    } catch {
+      setComplaintTimeline([])
+    }
+
     setShowDetailModal(true)
   }
 
-  const updateStatus = async (complaintId, newStatus) => {
+  const updateStatus = async (complaintId, payload) => {
     try {
-      const updated = await updateAdminComplaintStatus(complaintId, newStatus)
+      const updated = await updateAdminComplaintStatus(complaintId, payload)
       setComplaints((prev) => prev.map(c => c.id === complaintId ? updated : c))
       setSelectedComplaint((prev) => prev && prev.id === complaintId ? updated : prev)
+
+      try {
+        const timeline = await fetchAdminComplaintTimeline({ complaintId, page: 0, size: 100 })
+        setComplaintTimeline(timeline?.content || [])
+      } catch {
+        setComplaintTimeline([])
+      }
     } catch {
       // keep current state
     }
   }
 
   const escalateCase = (complaintId) => {
-    updateStatus(complaintId, 'UNDER_REVIEW')
+    updateStatus(complaintId, {
+      status: 'UNDER_REVIEW',
+      publicMessage: 'Complaint under review',
+      adminNotes: 'Escalated for immediate review',
+      progressPercentage: 35
+    })
+  }
+
+  const saveStatusUpdate = async () => {
+    if (!selectedComplaint) return
+    await updateStatus(selectedComplaint.id, {
+      ...updateDraft,
+      progressPercentage: Number(updateDraft.progressPercentage)
+    })
   }
 
   if (loading) {
@@ -182,6 +227,8 @@ const ComplaintManagement = () => {
               <option value="">All Status</option>
               <option value="SUBMITTED">Submitted</option>
               <option value="UNDER_REVIEW">Under Review</option>
+              <option value="EVIDENCE_VERIFICATION_IN_PROGRESS">Evidence Verification</option>
+              <option value="INVESTIGATION_STARTED">Investigation Started</option>
               <option value="APPROVED">Approved</option>
               <option value="RESOLVED">Resolved</option>
               <option value="REJECTED">Rejected</option>
@@ -238,6 +285,7 @@ const ComplaintManagement = () => {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Department</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">AI Score</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">SLA</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Progress</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
               </tr>
             </thead>
@@ -283,6 +331,14 @@ const ComplaintManagement = () => {
                       {complaint.slaDeadline ? new Date(complaint.slaDeadline).toLocaleDateString() : '-'}
                     </span>
                   </td>
+                  <td className="px-4 py-3 min-w-32">
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-purple-600" style={{ width: `${Math.max(0, Math.min(100, complaint.progressPercentage || 0))}%` }}></div>
+                      </div>
+                      <span className="text-xs text-gray-500">{complaint.progressPercentage || 0}%</span>
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <button
@@ -305,7 +361,7 @@ const ComplaintManagement = () => {
               ))}
               {filteredComplaints.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-500">No complaints found.</td>
+                  <td colSpan={9} className="px-4 py-8 text-center text-sm text-gray-500">No complaints found.</td>
                 </tr>
               )}
             </tbody>
@@ -336,12 +392,12 @@ const ComplaintManagement = () => {
                 <StatusBadge status={selectedComplaint.status} />
                 <PriorityBadge priority={selectedComplaint.priority} />
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  selectedComplaint.evidenceIntegrity === 'VERIFIED' 
+                  String(selectedComplaint.evidenceVerificationStatus || '').includes('VERIFIED')
                     ? 'bg-green-100 text-green-800' 
                     : 'bg-yellow-100 text-yellow-800'
                 }`}>
                   <Shield className="w-3 h-3 inline mr-1" />
-                  Evidence: {selectedComplaint.evidenceIntegrity}
+                  Evidence: {selectedComplaint.evidenceVerificationStatus || 'RECEIVED'}
                 </span>
               </div>
 
@@ -443,14 +499,16 @@ const ComplaintManagement = () => {
               {/* Actions */}
               <div className="border-t pt-6">
                 <h3 className="font-semibold text-gray-800 mb-4">Actions</h3>
-                <div className="flex flex-wrap gap-3">
+                <div className="grid md:grid-cols-2 gap-3">
                   <select
                     className="px-4 py-2 border border-gray-200 rounded-lg text-sm"
-                    value={selectedComplaint.status}
-                    onChange={(e) => updateStatus(selectedComplaint.id, e.target.value)}
+                    value={updateDraft.status}
+                    onChange={(e) => setUpdateDraft((prev) => ({ ...prev, status: e.target.value }))}
                   >
                     <option value="SUBMITTED">Submitted</option>
                     <option value="UNDER_REVIEW">Under Review</option>
+                    <option value="EVIDENCE_VERIFICATION_IN_PROGRESS">Evidence Verification In Progress</option>
+                    <option value="INVESTIGATION_STARTED">Investigation Started</option>
                     <option value="APPROVED">Approved</option>
                     <option value="RESOLVED">Resolved</option>
                     <option value="REJECTED">Rejected</option>
@@ -458,20 +516,64 @@ const ComplaintManagement = () => {
 
                   <select
                     className="px-4 py-2 border border-gray-200 rounded-lg text-sm"
-                    value={selectedComplaint.priority}
+                    value={updateDraft.evidenceVerificationStatus}
+                    onChange={(e) => setUpdateDraft((prev) => ({ ...prev, evidenceVerificationStatus: e.target.value }))}
                   >
-                    <option value="LOW">Low Priority</option>
-                    <option value="MEDIUM">Medium Priority</option>
-                    <option value="HIGH">High Priority</option>
-                    <option value="CRITICAL">Critical</option>
+                    <option value="RECEIVED">Evidence Received</option>
+                    <option value="HASH_VERIFIED">Evidence Hash Verified</option>
+                    <option value="VERIFIED">Evidence Integrity Verified</option>
+                    <option value="REJECTED">Evidence Rejected</option>
                   </select>
 
-                  <button className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700">
-                    Add Note
-                  </button>
+                  <select
+                    className="px-4 py-2 border border-gray-200 rounded-lg text-sm"
+                    value={updateDraft.evidenceReviewStatus}
+                    onChange={(e) => setUpdateDraft((prev) => ({ ...prev, evidenceReviewStatus: e.target.value }))}
+                  >
+                    <option value="UNDER_REVIEW">Evidence Under Review</option>
+                    <option value="ACCEPTED">Evidence Accepted</option>
+                    <option value="REJECTED">Evidence Rejected</option>
+                  </select>
 
-                  <button className="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600">
-                    Assign Officer
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={updateDraft.progressPercentage}
+                    onChange={(e) => setUpdateDraft((prev) => ({ ...prev, progressPercentage: e.target.value }))}
+                    className="px-4 py-2 border border-gray-200 rounded-lg text-sm"
+                    placeholder="Progress %"
+                  />
+
+                  <input
+                    value={updateDraft.publicMessage}
+                    onChange={(e) => setUpdateDraft((prev) => ({ ...prev, publicMessage: e.target.value }))}
+                    className="px-4 py-2 border border-gray-200 rounded-lg text-sm md:col-span-2"
+                    placeholder="Public activity summary visible to user"
+                  />
+
+                  <textarea
+                    value={updateDraft.adminNotes}
+                    onChange={(e) => setUpdateDraft((prev) => ({ ...prev, adminNotes: e.target.value }))}
+                    className="px-4 py-2 border border-gray-200 rounded-lg text-sm md:col-span-2"
+                    rows={3}
+                    placeholder="Internal admin notes (not publicly shown)"
+                  />
+
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={updateDraft.usedInInvestigation}
+                      onChange={(e) => setUpdateDraft((prev) => ({ ...prev, usedInInvestigation: e.target.checked }))}
+                    />
+                    Evidence used in investigation
+                  </label>
+
+                  <button
+                    onClick={saveStatusUpdate}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700"
+                  >
+                    Save Update
                   </button>
 
                   {!selectedComplaint.escalationFlagged && (
@@ -489,19 +591,18 @@ const ComplaintManagement = () => {
               <div className="border-t pt-6">
                 <h3 className="font-semibold text-gray-800 mb-4">Activity Log</h3>
                 <div className="space-y-3">
-                  {[
-                    { action: 'Status changed to IN_PROGRESS', user: 'Admin User', time: '2 hours ago' },
-                    { action: 'Assigned to Officer Sharma', user: 'System', time: '3 hours ago' },
-                    { action: 'Evidence uploaded', user: 'Complainant', time: '5 hours ago' },
-                    { action: 'Complaint filed', user: 'System', time: '1 day ago' }
-                  ].map((log, index) => (
-                    <div key={index} className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
+                  {complaintTimeline.length === 0 && (
+                    <div className="text-sm text-gray-500">No activity entries yet.</div>
+                  )}
+                  {complaintTimeline.map((log) => (
+                    <div key={log.id} className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
                       <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                       <div className="flex-1">
-                        <p className="text-sm text-gray-800">{log.action}</p>
-                        <p className="text-xs text-gray-500">by {log.user}</p>
+                        <p className="text-sm text-gray-800">{log.title || String(log.newStatus || '').replace(/_/g, ' ')}</p>
+                        <p className="text-xs text-gray-500">by {log.changedBy || 'System'}</p>
+                        <p className="text-xs text-gray-500">{log.publicSummary || log.comment || 'Update posted'}</p>
                       </div>
-                      <span className="text-xs text-gray-400">{log.time}</span>
+                      <span className="text-xs text-gray-400">{log.timestamp ? new Date(log.timestamp).toLocaleString() : '-'}</span>
                     </div>
                   ))}
                 </div>

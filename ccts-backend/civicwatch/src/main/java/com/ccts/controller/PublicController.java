@@ -1,10 +1,12 @@
 package com.ccts.controller;
 
 import com.ccts.dto.ApiResponse;
+import com.ccts.dto.DownloadFormResponse;
 import com.ccts.dto.TransparencyStatsResponse;
 import com.ccts.dto.GeoHeatmapResponse;
 import com.ccts.dto.TurnstileVerifyRequest;
 import com.ccts.service.CloudflareService;
+import com.ccts.service.DownloadFormService;
 import com.ccts.service.PublicStatsService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class PublicController {
 
     private final PublicStatsService publicStatsService;
     private final CloudflareService cloudflareService;
+    private final DownloadFormService downloadFormService;
 
     @Value("${cloudflare.turnstile.site-key:}")
     private String turnstileSiteKey;
@@ -64,6 +67,15 @@ public class PublicController {
             "siteKey", turnstileSiteKey != null ? turnstileSiteKey : ""
         );
         return ResponseEntity.ok(ApiResponse.success("Turnstile config retrieved", config));
+    }
+
+    /**
+     * Get admin-uploaded public forms
+     * GET /api/v1/public/forms
+     */
+    @GetMapping("/forms")
+    public ResponseEntity<ApiResponse<java.util.List<DownloadFormResponse>>> getPublicForms() {
+        return ResponseEntity.ok(ApiResponse.success("Forms retrieved", downloadFormService.getPublicForms()));
     }
 
     /**

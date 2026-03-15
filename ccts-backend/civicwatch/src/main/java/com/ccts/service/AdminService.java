@@ -142,11 +142,21 @@ public class AdminService {
 
         // Update complaint
         complaint.setStatus(newStatus);
+        complaint.setProgressPercentage(resolveProgress(request.getProgressPercentage(), newStatus));
         if (request.getAdminNotes() != null) {
             complaint.setAdminNotes(request.getAdminNotes());
         }
         if (request.getRejectionReason() != null) {
             complaint.setRejectionReason(request.getRejectionReason());
+        }
+        if (request.getEvidenceVerificationStatus() != null) {
+            complaint.setEvidenceVerificationStatus(request.getEvidenceVerificationStatus());
+        }
+        if (request.getEvidenceReviewStatus() != null) {
+            complaint.setEvidenceReviewStatus(request.getEvidenceReviewStatus());
+        }
+        if (request.getUsedInInvestigation() != null) {
+            complaint.setEvidenceUsedInInvestigation(request.getUsedInInvestigation());
         }
 
         complaintRepository.save(complaint);
@@ -157,7 +167,17 @@ public class AdminService {
                 .oldStatus(oldStatus)
                 .newStatus(newStatus)
                 .changedBy(admin)
+                .title(titleForStatus(newStatus))
+            .activityType(activityTypeForStatus(newStatus))
                 .comment(request.getAdminNotes())
+                .publicSummary(request.getPublicMessage() != null ? request.getPublicMessage() : publicSummaryForStatus(newStatus))
+                .visibleToUser(true)
+                .progressPercentage(complaint.getProgressPercentage())
+                .evidenceFileName(complaint.getEvidenceFileName())
+                .evidenceVerificationStatus(complaint.getEvidenceVerificationStatus())
+                .evidenceReviewStatus(complaint.getEvidenceReviewStatus())
+                .usedInInvestigation(complaint.getEvidenceUsedInInvestigation())
+            .notificationChannels(notificationService.getNotificationChannels(mapToResponse(complaint)))
                 .timestamp(LocalDateTime.now())
                 .build();
         
@@ -189,6 +209,7 @@ public class AdminService {
         
         complaint.setAssignedOfficer(officer);
         complaint.setStatus(ComplaintStatus.UNDER_REVIEW);
+        complaint.setProgressPercentage(Math.max(complaint.getProgressPercentage() != null ? complaint.getProgressPercentage() : 0, 40));
         
         complaintRepository.save(complaint);
 
@@ -198,7 +219,13 @@ public class AdminService {
                 .oldStatus(oldStatus)
                 .newStatus(ComplaintStatus.UNDER_REVIEW)
                 .changedBy(officer)
+                .title("Officer Assigned")
+                .activityType("ASSIGNMENT")
                 .comment("Assigned to officer: " + officer.getName())
+                .publicSummary("Officer assigned to case")
+                .visibleToUser(true)
+                .progressPercentage(complaint.getProgressPercentage())
+            .notificationChannels(notificationService.getNotificationChannels(mapToResponse(complaint)))
                 .timestamp(LocalDateTime.now())
                 .build();
         
@@ -276,10 +303,12 @@ public class AdminService {
                 .fileName(fileName)
                 .fileType(fileType)
                 .fileUrl(evidenceUrl)
-                .uploadDate(complaint.getCreatedAt())
-            .integrityStatus(null)
-            .virusScanStatus(null)
-                .sha256(null)
+                .uploadDate(complaint.getEvidenceUploadDate() != null ? complaint.getEvidenceUploadDate() : complaint.getCreatedAt())
+                .integrityStatus(complaint.getEvidenceVerificationStatus())
+                .virusScanStatus("NOT_AVAILABLE")
+                .reviewStatus(complaint.getEvidenceReviewStatus())
+                .usedInInvestigation(complaint.getEvidenceUsedInInvestigation())
+                .sha256(complaint.getEvidenceSha256())
                 .build();
     }
 
@@ -291,7 +320,17 @@ public class AdminService {
                 .oldStatus(history.getOldStatus())
                 .newStatus(history.getNewStatus())
                 .changedBy(history.getChangedBy() != null ? history.getChangedBy().getName() : null)
+                .title(history.getTitle())
                 .comment(history.getComment())
+                .publicSummary(history.getPublicSummary())
+                .visibleToUser(history.getVisibleToUser())
+                .activityType(history.getActivityType())
+                .progressPercentage(history.getProgressPercentage())
+                .evidenceFileName(history.getEvidenceFileName())
+                .evidenceVerificationStatus(history.getEvidenceVerificationStatus())
+                .evidenceReviewStatus(history.getEvidenceReviewStatus())
+                .usedInInvestigation(history.getUsedInInvestigation())
+                .notificationChannels(history.getNotificationChannels())
                 .timestamp(history.getTimestamp())
                 .build();
     }
@@ -320,11 +359,18 @@ public class AdminService {
                 .accuracy(complaint.getAccuracy())
                 .incidentDate(complaint.getIncidentDate())
                 .evidenceUrl(complaint.getEvidenceUrl())
+                .evidenceFileName(complaint.getEvidenceFileName())
+                .evidenceUploadDate(complaint.getEvidenceUploadDate())
+                .evidenceVerificationStatus(complaint.getEvidenceVerificationStatus())
+                .evidenceReviewStatus(complaint.getEvidenceReviewStatus())
+                .evidenceUsedInInvestigation(complaint.getEvidenceUsedInInvestigation())
+                .evidenceSha256(complaint.getEvidenceSha256())
                 .respondentName(complaint.getRespondentName())
                 .respondentDesignation(complaint.getRespondentDesignation())
                 .respondentDepartment(complaint.getRespondentDepartment())
                 .status(complaint.getStatus())
                 .trackingNumber(complaint.getTrackingNumber())
+                .progressPercentage(complaint.getProgressPercentage() != null ? complaint.getProgressPercentage() : 0)
                 .createdAt(complaint.getCreatedAt())
                 .updatedAt(complaint.getUpdatedAt())
                 .adminNotes(complaint.getAdminNotes())
@@ -340,5 +386,55 @@ public class AdminService {
                 .assignedOfficerId(complaint.getAssignedOfficer() != null ? complaint.getAssignedOfficer().getId() : null)
                 .assignedOfficerName(complaint.getAssignedOfficer() != null ? complaint.getAssignedOfficer().getName() : null)
                 .build();
+    }
+
+    private Integer resolveProgress(Integer requestedProgress, ComplaintStatus status) {
+        if (requestedProgress != null) {
+            return Math.max(0, Math.min(100, requestedProgress));
+        }
+        return switch (status) {
+            case SUBMITTED -> 10;
+            case UNDER_REVIEW -> 35;
+            case EVIDENCE_VERIFICATION_IN_PROGRESS -> 50;
+            case INVESTIGATION_STARTED -> 65;
+            case APPROVED -> 85;
+            case REJECTED -> 100;
+            case RESOLVED -> 100;
+        };
+    }
+
+    private String titleForStatus(ComplaintStatus status) {
+        return switch (status) {
+            case SUBMITTED -> "Complaint Submitted";
+            case UNDER_REVIEW -> "Under Review";
+            case EVIDENCE_VERIFICATION_IN_PROGRESS -> "Evidence Verification in Progress";
+            case INVESTIGATION_STARTED -> "Investigation Started";
+            case APPROVED -> "Decision Made (Approved)";
+            case REJECTED -> "Decision Made (Rejected)";
+            case RESOLVED -> "Case Resolved";
+        };
+    }
+
+    private String publicSummaryForStatus(ComplaintStatus status) {
+        return switch (status) {
+            case SUBMITTED -> "Complaint received";
+            case UNDER_REVIEW -> "Complaint under review";
+            case EVIDENCE_VERIFICATION_IN_PROGRESS -> "Evidence verification in progress";
+            case INVESTIGATION_STARTED -> "Field investigation initiated";
+            case APPROVED -> "Complaint approved";
+            case REJECTED -> "Complaint rejected";
+            case RESOLVED -> "Case resolved";
+        };
+    }
+
+    private String activityTypeForStatus(ComplaintStatus status) {
+        return switch (status) {
+            case SUBMITTED -> "COMPLAINT_RECEIVED";
+            case UNDER_REVIEW -> "UNDER_REVIEW";
+            case EVIDENCE_VERIFICATION_IN_PROGRESS -> "EVIDENCE_REVIEW_STARTED";
+            case INVESTIGATION_STARTED -> "FIELD_INVESTIGATION_INITIATED";
+            case APPROVED, REJECTED -> "DECISION_PENDING_COMPLETED";
+            case RESOLVED -> "CASE_RESOLVED";
+        };
     }
 }

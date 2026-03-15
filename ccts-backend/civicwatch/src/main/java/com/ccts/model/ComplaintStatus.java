@@ -11,6 +11,8 @@ package com.ccts.model;
 public enum ComplaintStatus {
     SUBMITTED,
     UNDER_REVIEW,
+    EVIDENCE_VERIFICATION_IN_PROGRESS,
+    INVESTIGATION_STARTED,
     APPROVED,
     REJECTED,
     RESOLVED

@@ -40,7 +40,15 @@ public class PublicStatsService {
             .count();
         long underInvestigation = allComplaints.stream()
             .filter(c -> c.getStatus() == ComplaintStatus.UNDER_REVIEW || 
-                        c.getStatus() == ComplaintStatus.APPROVED)
+                        c.getStatus() == ComplaintStatus.APPROVED ||
+                        c.getStatus() == ComplaintStatus.EVIDENCE_VERIFICATION_IN_PROGRESS ||
+                        c.getStatus() == ComplaintStatus.INVESTIGATION_STARTED)
+            .count();
+        long approved = allComplaints.stream()
+            .filter(c -> c.getStatus() == ComplaintStatus.APPROVED)
+            .count();
+        long rejected = allComplaints.stream()
+            .filter(c -> c.getStatus() == ComplaintStatus.REJECTED)
             .count();
         
         // Unique categories
@@ -92,6 +100,8 @@ public class PublicStatsService {
             .totalComplaintsFiled(totalFiled)
             .casesResolved(resolved)
             .underInvestigation(underInvestigation)
+            .complaintsApproved(approved)
+            .complaintsRejected(rejected)
             .categoriesTracked(categories.size())
             .resolutionRate(Math.round(resolutionRate * 10.0) / 10.0)
             .monthlyTrends(monthlyTrends)

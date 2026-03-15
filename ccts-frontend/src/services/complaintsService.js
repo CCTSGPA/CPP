@@ -53,6 +53,15 @@ export async function trackComplaint(trackingNumber) {
   return response.data;
 }
 
+/**
+ * Track complaint with timeline, activities, evidence, progress
+ * GET /api/v1/complaints/track/{trackingNumber}/details
+ */
+export async function trackComplaintDetails(trackingNumber) {
+  const response = await api.get(`/complaints/track/${trackingNumber}/details`);
+  return response.data;
+}
+
 // ==================== ADMIN ENDPOINTS ====================
 
 /**

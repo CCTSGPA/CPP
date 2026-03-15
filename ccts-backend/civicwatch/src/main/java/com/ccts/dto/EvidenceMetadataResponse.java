@@ -25,5 +25,7 @@ public class EvidenceMetadataResponse {
     private LocalDateTime uploadDate;
     private String integrityStatus;
     private String virusScanStatus;
+    private String reviewStatus;
+    private Boolean usedInInvestigation;
     private String sha256;
 }

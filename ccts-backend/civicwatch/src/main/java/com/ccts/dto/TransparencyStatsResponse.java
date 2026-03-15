@@ -20,6 +20,8 @@ public class TransparencyStatsResponse {
     private long totalComplaintsFiled;
     private long casesResolved;
     private long underInvestigation;
+    private long complaintsApproved;
+    private long complaintsRejected;
     private int categoriesTracked;
     private double resolutionRate;
 

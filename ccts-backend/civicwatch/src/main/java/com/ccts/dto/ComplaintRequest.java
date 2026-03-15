@@ -38,6 +38,12 @@ public class ComplaintRequest {
 
     private LocalDateTime incidentDate;
 
+    private String evidenceUrl;
+
+    private String evidenceFileName;
+
+    private String evidenceSha256;
+
     private String respondentName;
 
     private String respondentDesignation;

@@ -39,6 +39,37 @@ public class StatusHistory {
     @Column(name = "comment")
     private String comment;
 
+    @Column(name = "title")
+    private String title;
+
+    @Column(name = "activity_type")
+    private String activityType;
+
+    @Column(name = "public_summary", columnDefinition = "TEXT")
+    private String publicSummary;
+
+    @Column(name = "visible_to_user")
+    @Builder.Default
+    private Boolean visibleToUser = true;
+
+    @Column(name = "progress_percentage")
+    private Integer progressPercentage;
+
+    @Column(name = "evidence_file_name")
+    private String evidenceFileName;
+
+    @Column(name = "evidence_verification_status")
+    private String evidenceVerificationStatus;
+
+    @Column(name = "evidence_review_status")
+    private String evidenceReviewStatus;
+
+    @Column(name = "used_in_investigation")
+    private Boolean usedInInvestigation;
+
+    @Column(name = "notification_channels")
+    private String notificationChannels;
+
     @Column(name = "timestamp")
     private LocalDateTime timestamp;
 }

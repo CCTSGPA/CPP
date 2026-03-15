@@ -16,4 +16,6 @@ public interface StatusHistoryRepository extends JpaRepository<StatusHistory, Lo
     List<StatusHistory> findByComplaintOrderByTimestampDesc(Complaint complaint);
 
     List<StatusHistory> findByComplaintIdOrderByTimestampDesc(Long complaintId);
+
+    List<StatusHistory> findByComplaintIdAndVisibleToUserTrueOrderByTimestampDesc(Long complaintId);
 }

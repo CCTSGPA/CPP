@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * DTO for complaint response
@@ -31,6 +32,12 @@ public class ComplaintResponse {
 
     private LocalDateTime incidentDate;
     private String evidenceUrl;
+    private String evidenceFileName;
+    private LocalDateTime evidenceUploadDate;
+    private String evidenceVerificationStatus;
+    private String evidenceReviewStatus;
+    private Boolean evidenceUsedInInvestigation;
+    private String evidenceSha256;
     private String respondentName;
     private String respondentDesignation;
     private String respondentDepartment;
@@ -40,6 +47,7 @@ public class ComplaintResponse {
     private String complainantPhone;
     private ComplaintStatus status;
     private String trackingNumber;
+    private Integer progressPercentage;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String adminNotes;
@@ -58,5 +66,10 @@ public class ComplaintResponse {
     // Assigned officer info
     private Long assignedOfficerId;
     private String assignedOfficerName;
+
+    // Transparency data
+    private List<TimelineEntryResponse> timeline;
+    private List<TimelineEntryResponse> activitySummaries;
+    private List<EvidenceMetadataResponse> evidenceItems;
 }
 

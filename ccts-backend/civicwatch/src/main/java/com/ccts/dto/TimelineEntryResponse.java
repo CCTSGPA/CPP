@@ -23,6 +23,16 @@ public class TimelineEntryResponse {
     private ComplaintStatus oldStatus;
     private ComplaintStatus newStatus;
     private String changedBy;
+    private String title;
     private String comment;
+    private String publicSummary;
+    private Boolean visibleToUser;
+    private String activityType;
+    private Integer progressPercentage;
+    private String evidenceFileName;
+    private String evidenceVerificationStatus;
+    private String evidenceReviewStatus;
+    private Boolean usedInInvestigation;
+    private String notificationChannels;
     private LocalDateTime timestamp;
 }

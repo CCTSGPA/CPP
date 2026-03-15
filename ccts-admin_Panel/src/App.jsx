@@ -12,6 +12,7 @@ import SecurityControls from './pages/SecurityControls'
 import AuditLogs from './pages/AuditLogs'
 import AdvancedAnalytics from './pages/AdvancedAnalytics'
 import EscalationWorkflow from './pages/EscalationWorkflow'
+import FormsManagement from './pages/FormsManagement'
 import AccessDenied from './pages/AccessDenied'
 import AdminLayout from './layouts/AdminLayout'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -36,6 +37,7 @@ function App() {
               <Route path="/security" element={<SecurityControls />} />
               <Route path="/analytics" element={<AdvancedAnalytics />} />
               <Route path="/escalation" element={<EscalationWorkflow />} />
+              <Route path="/forms" element={<FormsManagement />} />
               <Route path="/audit-logs" element={<AuditLogs />} />
               
               {/* Super Admin Only Routes */}
