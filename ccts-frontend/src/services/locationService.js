@@ -280,3 +280,61 @@ export function getHighAccuracyPosition(options = {}) {
     }, timeout);
   });
 }
+
+/**
+ * Validate if location is within India
+ * @param {Object} locationData - Location data with latitude, longitude, and state
+ * @returns {Object} - { isValid: boolean, message: string }
+ */
+export function isLocationInMaharashtra(locationData) {
+  if (!locationData) {
+    return { isValid: false, message: "Location data is required." };
+  }
+
+  // Get coordinates for India boundary check
+  const { latitude, longitude } = locationData;
+  
+  // India approximate bounds: Lat 8°N to 37°N, Lon 68°E to 97°E
+  if (latitude && longitude) {
+    const isWithinIndia =
+      latitude >= 8 &&
+      latitude <= 37 &&
+      longitude >= 68 &&
+      longitude <= 97;
+
+    if (isWithinIndia) {
+      return { isValid: true, message: "Location verified in India." };
+    } else {
+      return {
+        isValid: false,
+        message: "Your location is outside India. Complaints can only be filed from within India.",
+      };
+    }
+  }
+
+  // Fallback: Check state field from reverse geocoding
+  if (locationData.state) {
+    const state = locationData.state.toLowerCase();
+    const indianStates = [
+      "maharashtra", "karnataka", "tamil nadu", "telangana", "andhra pradesh",
+      "uttar pradesh", "madhya pradesh", "rajasthan", "punjab", "haryana",
+      "kerala", "west bengal", "assam", "bihar", "jharkhand", "chhattisgarh",
+      "odisha", "gujarat", "himachal pradesh", "uttarakhand", "jammu & kashmir",
+      "ladakh", "delhi", "noida", "chandigarh", "puducherry", "goa",
+      "tripura", "manipur", "mizoram", "nagaland", "arunachal pradesh",
+      "meghalaya", "sikkim"
+    ];
+    
+    const isIndianState = indianStates.some(s => state.includes(s));
+    if (isIndianState) {
+      return { isValid: true, message: "Location verified in India." };
+    } else {
+      return {
+        isValid: false,
+        message: "Your location appears to be outside India. Complaints can only be filed from within India.",
+      };
+    }
+  }
+
+  return { isValid: false, message: "Unable to verify location. Please ensure location data is available." };
+}

@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import MainLayout from "../layouts/MainLayout";
 import { uploadFile, submitComplaint } from "../services/complaintsService";
-import { getHighAccuracyPosition, reverseGeocodeDebounced } from "../services/locationService";
+import { getHighAccuracyPosition, reverseGeocodeDebounced, isLocationInMaharashtra } from "../services/locationService";
 
 // Categories for corruption complaints
 const COMPLAINT_CATEGORIES = [
@@ -88,7 +88,7 @@ export default function FileComplaint() {
         [geo.area, geo.city, geo.state, geo.pincode].filter(Boolean).join(", ") ||
         `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
 
-      setLocationDetails({
+      const locationData = {
         latitude,
         longitude,
         accuracy: Math.round(accuracy),
@@ -97,8 +97,20 @@ export default function FileComplaint() {
         state: geo.state || "",
         pincode: geo.pincode || "",
         displayAddress: computedAddress,
-      });
+      };
 
+      // Validate location is in India
+      const validation = isLocationInMaharashtra(locationData);
+      if (!validation.isValid) {
+        setLocationStatus({
+          type: "error",
+          message: validation.message,
+        });
+        setIsGettingLocation(false);
+        return;
+      }
+
+      setLocationDetails(locationData);
       setValue("location", computedAddress, { shouldValidate: true });
       
       const accuracyMsg = accuracy <= 20 
@@ -208,6 +220,18 @@ export default function FileComplaint() {
 
   // Form submission
   const onSubmit = async (data) => {
+    // Validate location is in India before submission
+    if (!locationDetails) {
+      alert("Please capture your location before submitting the complaint.");
+      return;
+    }
+
+    const locationValidation = isLocationInMaharashtra(locationDetails);
+    if (!locationValidation.isValid) {
+      alert(locationValidation.message);
+      return;
+    }
+
     setIsLoading(true);
     try {
       let evidenceUrl = null;

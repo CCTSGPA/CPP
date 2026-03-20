@@ -36,6 +36,15 @@ public class GeolocationService {
 
     public ReverseGeocodeResponse reverseGeocode(Double latitude, Double longitude) {
         try {
+            // Validate location is within India
+            // India bounds: Lat 8°N to 37°N, Lon 68°E to 97°E
+            if (latitude == null || longitude == null || 
+                latitude < 8.0 || latitude > 37.0 || 
+                longitude < 68.0 || longitude > 97.0) {
+                log.warn("Location outside India: lat={}, lon={}", latitude, longitude);
+                throw new GeolocationException("Your location is outside India. Complaints can only be filed from within India.");
+            }
+
             String cacheKey = toCacheKey(latitude, longitude);
             CachedLocation cachedLocation = cache.get(cacheKey);
             if (cachedLocation != null && cachedLocation.expiresAt() > System.currentTimeMillis()) {
