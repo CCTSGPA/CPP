@@ -110,7 +110,7 @@ const UserSidebar = () => {
           </div>
           <div>
             <h1 className="text-white font-bold text-lg tracking-wider">CCTS</h1>
-            <p className="text-gray-400 text-xs font-medium">Secure Shield</p>
+            <p className="text-gray-400 text-xs font-medium">CivicWatch</p>
           </div>
         </Link>
       </div>
@@ -192,7 +192,7 @@ const UserSidebar = () => {
           </div>
           <div className="hidden sm:block">
             <div className="text-sm font-bold tracking-wide">CCTS</div>
-            <div className="text-xs opacity-90 font-medium">Secure Shield</div>
+            <div className="text-xs opacity-90 font-medium">CivicWatch</div>
           </div>
         </Link>
         

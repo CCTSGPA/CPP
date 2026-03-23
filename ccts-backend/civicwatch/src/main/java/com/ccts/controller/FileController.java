@@ -19,10 +19,12 @@ import com.ccts.service.NotificationService;
 import com.ccts.service.OtpService;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +77,20 @@ public class FileController {
         User uploadUser = getAuthenticatedUser(userDetails);
         EvidenceUpload upload = storeUpload(file, uploadUser, uploadUser);
         return ResponseEntity.ok(ApiResponse.success("File uploaded successfully", toUploadResponse(upload)));
+    }
+
+    /**
+     * Analyze a file for suspicious content before upload/submit.
+     * POST /api/v1/files/analyze
+     */
+    @PostMapping("/analyze")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> analyzeFile(
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        getAuthenticatedUser(userDetails);
+        validateFile(file);
+        Map<String, Object> analysis = analyzeFileSafety(file);
+        return ResponseEntity.ok(ApiResponse.success("File analysis completed", analysis));
     }
 
     /**
@@ -182,6 +198,12 @@ public class FileController {
     private EvidenceUpload storeUpload(MultipartFile file, User ownerUser, User uploadedBy) {
         validateFile(file);
         try {
+            Map<String, Object> analysis = analyzeFileSafety(file);
+            boolean isSafe = Boolean.TRUE.equals(analysis.get("isSafe"));
+            if (!isSafe) {
+                throw CustomException.badRequest("File failed security analysis. Upload blocked.");
+            }
+
             Path uploadPath = Paths.get(uploadDir);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
@@ -234,6 +256,43 @@ public class FileController {
         if (!isImage && !isAllowedOtherType) {
             throw CustomException.badRequest("Unsupported file content type: " + contentType);
         }
+    }
+
+    private Map<String, Object> analyzeFileSafety(MultipartFile file) {
+        List<String> detectedThreats = new ArrayList<>();
+        String fileName = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+        String contentType = file.getContentType() != null ? file.getContentType().toLowerCase() : "";
+
+        try {
+            byte[] bytes = file.getBytes();
+            if (bytes.length >= 2 && bytes[0] == 0x4D && bytes[1] == 0x5A) {
+                detectedThreats.add("Windows executable signature detected");
+            }
+            if (bytes.length >= 4 && bytes[0] == 0x7F && bytes[1] == 0x45 && bytes[2] == 0x4C && bytes[3] == 0x46) {
+                detectedThreats.add("ELF executable signature detected");
+            }
+
+            int sampleLength = Math.min(bytes.length, 8192);
+            String sampleText = new String(Arrays.copyOf(bytes, sampleLength), StandardCharsets.UTF_8).toLowerCase();
+            if (sampleText.contains("<script") || sampleText.contains("powershell") || sampleText.contains("cmd.exe") || sampleText.contains("wscript")) {
+                detectedThreats.add("Suspicious script command pattern detected");
+            }
+
+            boolean imageExtension = fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") || fileName.endsWith(".png") || fileName.endsWith(".gif") || fileName.endsWith(".webp");
+            if (imageExtension && contentType.startsWith("text/")) {
+                detectedThreats.add("File extension/content type mismatch");
+            }
+        } catch (IOException e) {
+            detectedThreats.add("Unable to analyze file content");
+        }
+
+        boolean isSafe = detectedThreats.isEmpty();
+        Map<String, Object> result = new HashMap<>();
+        result.put("isSafe", isSafe);
+        result.put("scanStatus", isSafe ? "CLEAN" : "SUSPICIOUS");
+        result.put("detectedThreats", detectedThreats);
+        result.put("message", isSafe ? "No suspicious patterns detected" : "Suspicious content detected");
+        return result;
     }
 
     private String extractExtension(String fileName) {

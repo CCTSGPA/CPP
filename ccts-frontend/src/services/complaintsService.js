@@ -17,6 +17,22 @@ export async function uploadFile(file) {
 }
 
 /**
+ * Analyze evidence file before submission/upload
+ * POST /api/v1/files/analyze
+ */
+export async function analyzeEvidenceFile(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await api.post("/files/analyze", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return response.data; // Returns: { status, message, data: { isSafe, scanStatus, detectedThreats } }
+}
+
+/**
  * Submit a new complaint
  * POST /api/v1/complaints
  */

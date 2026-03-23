@@ -6,6 +6,13 @@ const getAuthHeaders = () => {
   }
 }
 
+const getAuthOnlyHeaders = () => {
+  const token = localStorage.getItem('adminToken')
+  return {
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  }
+}
+
 const parseApiResponse = async (response) => {
   const text = await response.text()
   let payload = null
@@ -80,6 +87,20 @@ export const fetchAdminEvidence = async ({ page = 0, size = 500 } = {}) => {
   const response = await fetch(`/api/v1/admin/evidence?${params.toString()}`, {
     headers: getAuthHeaders()
   })
+  return parseApiResponse(response)
+}
+
+export const uploadEvidenceForUser = async ({ userId, file }) => {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const params = new URLSearchParams({ userId: String(userId) })
+  const response = await fetch(`/api/v1/files/admin/upload-for-user?${params.toString()}`, {
+    method: 'POST',
+    headers: getAuthOnlyHeaders(),
+    body: formData
+  })
+
   return parseApiResponse(response)
 }
 

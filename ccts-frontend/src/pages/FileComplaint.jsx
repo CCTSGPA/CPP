@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import MainLayout from "../layouts/MainLayout";
-import { uploadFile, submitComplaint } from "../services/complaintsService";
+import { analyzeEvidenceFile, uploadFile, submitComplaint } from "../services/complaintsService";
 import { getHighAccuracyPosition, reverseGeocodeDebounced, isLocationInMaharashtra } from "../services/locationService";
 
 // Categories for corruption complaints
@@ -55,6 +55,8 @@ export default function FileComplaint() {
   const [locationAccuracy, setLocationAccuracy] = useState(null);
   const [isCapturingImage, setIsCapturingImage] = useState(false);
   const [notice, setNotice] = useState({ type: "", message: "" });
+  const [evidenceName, setEvidenceName] = useState("");
+  const [scanState, setScanState] = useState({ status: "idle", message: "" });
   
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -186,6 +188,8 @@ export default function FileComplaint() {
     const imageDataUrl = canvas.toDataURL("image/jpeg", 0.8);
     setCameraImage(imageDataUrl);
     setImagePreview(imageDataUrl);
+    setEvidenceName("captured-evidence.jpg");
+    setScanState({ status: "idle", message: "File selected. Security scan will run at submit." });
     stopCamera();
   };
 
@@ -193,9 +197,10 @@ export default function FileComplaint() {
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (file) {
-      // Validate file type
-      if (!file.type.startsWith("image/")) {
-        showNotice("error", "Please select an image file.");
+      const allowedByType = file.type.startsWith("image/") || file.type === "application/pdf" || file.type.startsWith("text/plain");
+      const allowedByExt = /\.(jpg|jpeg|png|gif|webp|pdf|txt)$/i.test(file.name || "");
+      if (!allowedByType || !allowedByExt) {
+        showNotice("error", "Allowed evidence formats: JPG, PNG, GIF, WEBP, PDF, TXT.");
         return;
       }
       // Validate file size (max 10MB)
@@ -204,13 +209,33 @@ export default function FileComplaint() {
         return;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setImagePreview(null);
+      }
       setCameraImage(file); // Store the actual file object for upload
+      setEvidenceName(file.name || "evidence-file");
+      setScanState({ status: "idle", message: "File selected. Security scan will run at submit." });
     }
+  };
+
+  const runEvidenceScan = async (file) => {
+    setScanState({ status: "scanning", message: "Running security scan on evidence..." });
+    const response = await analyzeEvidenceFile(file);
+    const analysis = response?.data || {};
+    const isSafe = analysis?.isSafe === true;
+    if (!isSafe) {
+      const threatList = Array.isArray(analysis?.detectedThreats) ? analysis.detectedThreats : [];
+      const details = threatList.length > 0 ? ` (${threatList.join(", ")})` : "";
+      setScanState({ status: "unsafe", message: `Evidence failed security scan${details}` });
+      throw new Error("Evidence failed security analysis. Please upload a different file.");
+    }
+    setScanState({ status: "safe", message: "Security scan passed. Evidence is safe." });
   };
 
   // Upload evidence and get URL
@@ -268,6 +293,7 @@ export default function FileComplaint() {
         }
 
         if (fileToUpload) {
+          await runEvidenceScan(fileToUpload);
           evidenceUrl = await uploadEvidence(fileToUpload);
         }
       }
@@ -601,7 +627,7 @@ export default function FileComplaint() {
               </div>
 
               <div className="card">
-                <h3 className="font-semibold text-lg mb-4">Location & Evidence</h3>
+                <h3 className="font-semibold text-lg mb-4">Location & Evidence Upload</h3>
                 <div className="space-y-4">
                   {/* Location Section */}
                   <div>
@@ -682,9 +708,9 @@ export default function FileComplaint() {
                     />
                   </div>
 
-                  {/* Camera Section */}
+                  {/* Evidence Section */}
                   <div>
-                    <label className="text-sm font-medium">Evidence Photo</label>
+                    <label className="text-sm font-medium">Evidence File (with security scan)</label>
                     <div className="mt-1 space-y-2">
                       {!isCapturingImage ? (
                         <button
@@ -747,12 +773,32 @@ export default function FileComplaint() {
                         </div>
                       )}
 
+                      {evidenceName && (
+                        <p className="text-sm text-gray-700">Selected: {evidenceName}</p>
+                      )}
+
+                      {scanState.message && (
+                        <p
+                          className={`text-sm ${
+                            scanState.status === "safe"
+                              ? "text-green-700"
+                              : scanState.status === "unsafe"
+                                ? "text-red-700"
+                                : scanState.status === "scanning"
+                                  ? "text-blue-700"
+                                  : "text-gray-600"
+                          }`}
+                        >
+                          {scanState.message}
+                        </p>
+                      )}
+
                       {/* File input as alternative */}
                       <div className="mt-2">
-                        <label className="text-sm text-gray-600">Or upload existing image:</label>
+                        <label className="text-sm text-gray-600">Or upload existing file (JPG/PNG/GIF/WEBP/PDF/TXT):</label>
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/*,application/pdf,text/plain,.txt"
                           onChange={handleFileChange}
                           className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                         />
@@ -804,7 +850,7 @@ export default function FileComplaint() {
               ) : (
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || scanState.status === "scanning"}
                   className="px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
                 >
                   {isLoading ? "Submitting..." : "Submit Complaint"}

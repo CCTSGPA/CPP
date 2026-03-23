@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import MainLayout from "./layouts/MainLayout";
 import Home from "./pages/Home";
+import StartPage from "./pages/StartPage";
 import FileComplaint from "./pages/FileComplaint";
 import ComplaintHistory from "./pages/ComplaintHistory";
 import UploadEvidence from "./pages/UploadEvidence";
@@ -34,7 +35,8 @@ export default function App() {
       <div className="min-h-screen bg-gray-50">
         <Routes>
           {/* Main user pages with shared top navbar layout */}
-          <Route element={<MainLayout><Home /></MainLayout>} path="/" />
+          <Route element={<StartPage />} path="/" />
+          <Route element={<MainLayout><Home /></MainLayout>} path="/home" />
           <Route element={<ProtectedRoute><FileComplaint /></ProtectedRoute>} path="/file-complaint" />
           <Route path="/track-complaint" element={<Navigate to="/complaint-history" replace />} />
           <Route element={<ProtectedRoute><ComplaintHistory /></ProtectedRoute>} path="/complaint-history" />

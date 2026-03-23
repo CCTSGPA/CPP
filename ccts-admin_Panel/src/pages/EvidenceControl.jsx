@@ -16,7 +16,7 @@ import {
   ShieldAlert,
   RefreshCw
 } from 'lucide-react'
-import { fetchAdminEvidence } from '../services/adminApi'
+import { fetchAdminComplaints, fetchAdminEvidence, uploadEvidenceForUser } from '../services/adminApi'
 
 const FileTypeIcon = ({ type }) => {
   if (String(type || '').includes('image')) return <Image className="w-8 h-8 text-purple-500" />
@@ -73,38 +73,98 @@ const EvidenceControl = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [selectedFile, setSelectedFile] = useState(null)
+  const [targetUserId, setTargetUserId] = useState('')
+  const [userOptions, setUserOptions] = useState([])
+  const [selectedUserId, setSelectedUserId] = useState('')
+  const [uploadFile, setUploadFile] = useState(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadMessage, setUploadMessage] = useState('')
+
+  const loadEvidence = async () => {
+    setLoading(true)
+    try {
+      const data = await fetchAdminEvidence({ page: 0, size: 500 })
+      const content = data?.content || []
+      setFiles(content.map((item, index) => ({
+        id: item.id ?? index,
+        name: item.fileName || `evidence-${item.complaintId}`,
+        type: item.fileType || 'unknown',
+        size: 0,
+        uploadDate: item.uploadDate ? new Date(item.uploadDate).toLocaleString() : '-',
+        complaintId: item.complaintTrackingNumber || String(item.complaintId || ''),
+        sha256: item.sha256 || 'Not available',
+        integrityStatus: item.integrityStatus || 'UNKNOWN',
+        virusScanStatus: item.virusScanStatus || 'UNKNOWN',
+        metadata: {
+          fileUrl: item.fileUrl || 'Not available',
+          complaintId: item.complaintId || '-',
+          uploadDate: item.uploadDate ? new Date(item.uploadDate).toLocaleString() : '-'
+        }
+      })))
+    } catch {
+      setFiles([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadUserOptions = async () => {
+    try {
+      const complaintsPage = await fetchAdminComplaints({ page: 0, size: 500 })
+      const complaintItems = complaintsPage?.content || []
+
+      const uniqueUsers = new Map()
+      complaintItems.forEach((item) => {
+        if (!item?.userId) return
+        if (!uniqueUsers.has(item.userId)) {
+          uniqueUsers.set(item.userId, {
+            id: String(item.userId),
+            name: item.userName || 'Unknown User',
+            email: item.userEmail || 'No email'
+          })
+        }
+      })
+
+      setUserOptions(Array.from(uniqueUsers.values()))
+    } catch {
+      setUserOptions([])
+    }
+  }
 
   useEffect(() => {
-    const loadEvidence = async () => {
-      setLoading(true)
-      try {
-        const data = await fetchAdminEvidence({ page: 0, size: 500 })
-        const content = data?.content || []
-        setFiles(content.map((item, index) => ({
-          id: item.id ?? index,
-          name: item.fileName || `evidence-${item.complaintId}`,
-          type: item.fileType || 'unknown',
-          size: 0,
-          uploadDate: item.uploadDate ? new Date(item.uploadDate).toLocaleString() : '-',
-          complaintId: item.complaintTrackingNumber || String(item.complaintId || ''),
-          sha256: item.sha256 || 'Not available',
-          integrityStatus: item.integrityStatus || 'UNKNOWN',
-          virusScanStatus: item.virusScanStatus || 'UNKNOWN',
-          metadata: {
-            fileUrl: item.fileUrl || 'Not available',
-            complaintId: item.complaintId || '-',
-            uploadDate: item.uploadDate ? new Date(item.uploadDate).toLocaleString() : '-'
-          }
-        })))
-      } catch {
-        setFiles([])
-      } finally {
-        setLoading(false)
-      }
+    loadEvidence()
+    loadUserOptions()
+  }, [])
+
+  useEffect(() => {
+    if (selectedUserId) {
+      setTargetUserId(selectedUserId)
+    }
+  }, [selectedUserId])
+
+  const handleUploadForUser = async () => {
+    setUploadMessage('')
+    if (!targetUserId || Number.isNaN(Number(targetUserId))) {
+      setUploadMessage('Enter a valid numeric user ID.')
+      return
+    }
+    if (!uploadFile) {
+      setUploadMessage('Select a PDF or image file to upload.')
+      return
     }
 
-    loadEvidence()
-  }, [])
+    setUploading(true)
+    try {
+      await uploadEvidenceForUser({ userId: targetUserId, file: uploadFile })
+      setUploadMessage('Evidence uploaded successfully for user. User can view it in their Upload Evidence page.')
+      setUploadFile(null)
+      await loadEvidence()
+    } catch (err) {
+      setUploadMessage(err?.message || 'Failed to upload evidence for user.')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const formatFileSize = (bytes) => {
     if (!bytes || bytes <= 0) return 'N/A'
@@ -133,6 +193,55 @@ const EvidenceControl = () => {
 
   return (
     <div className="space-y-6">
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <h3 className="font-semibold text-gray-800 mb-3">Send PDF/Image To User</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Select User</label>
+            <select
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            >
+              <option value="">Choose user by name/email</option>
+              {userOptions.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.name} ({user.email}) - ID {user.id}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">User ID</label>
+            <input
+              type="number"
+              value={targetUserId}
+              onChange={(e) => setTargetUserId(e.target.value)}
+              placeholder="e.g. 12"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Evidence File</label>
+            <input
+              type="file"
+              accept=".pdf,image/*,.txt"
+              onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleUploadForUser}
+            disabled={uploading}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-60"
+          >
+            {uploading ? 'Uploading...' : 'Upload For User'}
+          </button>
+        </div>
+        {uploadMessage && <p className="mt-2 text-sm text-gray-700">{uploadMessage}</p>}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
           <div className="flex items-center gap-3">

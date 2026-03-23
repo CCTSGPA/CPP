@@ -1,53 +1,130 @@
 import React from "react";
 import MainLayout from "../layouts/MainLayout";
-import { getPublicForms } from "../services/publicApi";
+import { isAuthenticated } from "../services/authService";
+import api from "../services/api";
+import { Link } from "react-router-dom";
 
 export default function DownloadForms() {
-  const [forms, setForms] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
+  const [adminEvidence, setAdminEvidence] = React.useState([]);
+  const [evidenceLoading, setEvidenceLoading] = React.useState(false);
+  const [evidenceError, setEvidenceError] = React.useState("");
+
+  const getEvidenceDisplayName = (item) => {
+    const rawName = item?.originalFilename || item?.storedFilename || "Evidence file";
+    const withoutPath = String(rawName).split(/[\\/]/).pop() || "Evidence file";
+    return withoutPath.replace(/[_-]+/g, " ").trim();
+  };
+
+  const openProtectedEvidence = async (downloadUrl, fallbackUrl, fileName) => {
+    setEvidenceError("");
+    try {
+      const apiPath = String(downloadUrl || "").replace(/^\/api\/v1/, "");
+      const targetPath = apiPath || fallbackUrl;
+      if (!targetPath) return;
+
+      const response = await api.get(targetPath, {
+        responseType: "blob",
+        headers: {
+          "X-Skip-Auth-Redirect": "true",
+        },
+      });
+
+      const blob = new Blob([response.data]);
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = fileName || "admin-evidence";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      setEvidenceError(err?.response?.data?.message || "Unable to open/download admin evidence.");
+    }
+  };
 
   React.useEffect(() => {
-    const loadForms = async () => {
+    const loadAdminEvidence = async () => {
+      if (!isAuthenticated()) {
+        setAdminEvidence([]);
+        return;
+      }
+
+      setEvidenceLoading(true);
       try {
-        const response = await getPublicForms();
-        setForms(response?.data || []);
+        const response = await api.get("/files/my");
+        const items = response?.data?.data || [];
+        const onlyAdminUploads = items.filter(
+          (item) => String(item.uploadedByRole || "").toUpperCase() === "ADMIN"
+        );
+        const uniqueEvidence = onlyAdminUploads.filter((item, index, arr) => {
+          const key = `${item.id || ""}|${item.downloadUrl || item.fileUrl || ""}|${item.originalFilename || item.storedFilename || ""}`;
+          return index === arr.findIndex((candidate) => {
+            const candidateKey = `${candidate.id || ""}|${candidate.downloadUrl || candidate.fileUrl || ""}|${candidate.originalFilename || candidate.storedFilename || ""}`;
+            return candidateKey === key;
+          });
+        });
+        setAdminEvidence(uniqueEvidence);
       } catch {
-        setForms([]);
+        setAdminEvidence([]);
       } finally {
-        setLoading(false);
+        setEvidenceLoading(false);
       }
     };
 
-    loadForms();
+    loadAdminEvidence();
   }, []);
 
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto">
-        <h1 className="header-title">Download Forms</h1>
-        <p className="subtle mt-1">
-          Official forms and checklists to assist in filing complete complaints.
-        </p>
+        <div>
+          <h2 className="text-xl font-semibold">Shared Evidence</h2>
+          <p className="subtle mt-1">
+            Evidence files sent to your account.
+          </p>
 
-        <div className="mt-6 grid gap-4">
-          {loading && <div className="card text-sm text-neutral-600">Loading forms...</div>}
-          {!loading && forms.length === 0 && (
-            <div className="card text-sm text-neutral-600">No forms uploaded by admin yet.</div>
-          )}
-          {forms.map((f) => (
-            <div key={f.id} className="card flex items-center justify-between">
-              <div>
-                <div className="font-medium">{f.title}</div>
-                <div className="text-sm text-neutral-600">{f.description || "No description"}</div>
-                <div className="text-xs text-neutral-500 mt-1">
-                  Department: {f.department || "General"} • Uploaded: {f.createdAt ? new Date(f.createdAt).toLocaleDateString() : "-"}
-                </div>
-              </div>
-              <a className="px-3 py-2 bg-gov text-white rounded" href={f.fileUrl} target="_blank" rel="noreferrer">
-                Download
-              </a>
+          {!isAuthenticated() && (
+            <div className="card text-sm text-neutral-600 mt-4">
+              Please <Link to="/login" className="underline">sign in</Link> to view shared evidence.
             </div>
-          ))}
+          )}
+
+          {isAuthenticated() && (
+            <div className="mt-4 grid gap-4">
+              {evidenceError && <div className="card text-sm text-red-700">{evidenceError}</div>}
+              {evidenceLoading && <div className="card text-sm text-neutral-600">Loading shared evidence...</div>}
+              {!evidenceLoading && adminEvidence.length === 0 && (
+                <div className="card text-sm text-neutral-600">No shared evidence yet.</div>
+              )}
+              {adminEvidence.map((ev) => (
+                <div key={ev.id} className="card flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{getEvidenceDisplayName(ev)}</div>
+                    <div className="text-sm text-neutral-600">
+                      Uploaded by: {ev.uploadedBy || "Admin"} ({ev.uploadedByRole || "ADMIN"})
+                    </div>
+                    <div className="text-xs text-neutral-500 mt-1">
+                      Uploaded: {ev.uploadedAt ? new Date(ev.uploadedAt).toLocaleString() : "-"}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="px-3 py-2 bg-gov text-white rounded"
+                    onClick={() =>
+                      openProtectedEvidence(
+                        ev.downloadUrl,
+                        ev.fileUrl,
+                        ev.originalFilename || ev.storedFilename
+                      )
+                    }
+                  >
+                    View / Download
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </MainLayout>

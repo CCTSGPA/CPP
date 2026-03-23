@@ -87,23 +87,22 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className="bg-gradient-to-r from-[#F4EBFF] to-[#E8FDFF] shadow-sm sticky top-0 z-50">
+    <nav className="group bg-gradient-to-r from-[#F4EBFF] to-[#E8FDFF] shadow-sm sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-4">
         {/* Top row */}
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-6">
-            <Link to="/" className="flex items-center gap-3">
+            <Link to="/home" className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-md bg-gradient-to-tr from-[#6A0DAD] to-[#00CED1] text-white flex items-center justify-center">
                 <ShieldCheck size={18} />
               </div>
               <div className="text-lg font-semibold">
-                <div className="text-sm text-neutral-600">Secure Shield</div>
-                <div className="text-base font-bold text-neutral-900">CCTS</div>
+                <div className="text-base font-bold text-neutral-900">CivicWatch</div>
               </div>
             </Link>
 
             <div className="hidden md:flex items-center gap-2">
-              <NavItem to="/">Home</NavItem>
+              <NavItem to="/home">Home</NavItem>
               <NavItem to="/file-complaint">File Complaint</NavItem>
               <NavItem to="/complaint-history">Complaint History</NavItem>
               <NavItem to="/upload-evidence">Upload Evidence</NavItem>
@@ -180,12 +179,11 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="border-t mt-2" />
-
-        {/* Secondary row */}
-        <div className="flex items-center justify-between py-2 text-sm">
-          <div className="hidden md:flex items-center gap-4 text-neutral-600">
+        {/* Desktop secondary menu (hover to reveal) */}
+        <div className="hidden md:block max-h-0 overflow-hidden opacity-0 transition-all duration-200 group-hover:max-h-32 group-hover:opacity-100">
+          <div className="border-t mt-2" />
+          <div className="flex items-center justify-between py-2 text-sm">
+            <div className="flex items-center gap-4 text-neutral-600">
             {/* Departments dropdown: supports click-to-open (persists) and hover-to-open on desktop */}
             <div className="relative group" ref={deptToggleRef}>
               <button
@@ -287,13 +285,15 @@ export default function Navbar() {
             <Link to="/geo-heatmap" className="hover:text-[#6A0DAD]">
               Heatmap
             </Link>
+            </div>
           </div>
+        </div>
 
-          {/* Mobile secondary links */}
-          <div className={`md:hidden ${open ? "block" : "hidden"} py-2`}>
+        {/* Mobile secondary links */}
+        <div className={`md:hidden ${open ? "block" : "hidden"} py-2`}>
             <div className="flex flex-col gap-2">
               <NavLink
-                to="/"
+                to="/home"
                 className={({ isActive }) =>
                   isActive ? "text-gov" : "text-neutral-700"
                 }
@@ -379,7 +379,6 @@ export default function Navbar() {
               </div>
             </div>
           </div>
-        </div>
       </div>
     </nav>
   );

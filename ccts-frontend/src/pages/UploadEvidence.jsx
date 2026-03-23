@@ -12,6 +12,33 @@ export default function UploadEvidence() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [error, setError] = useState("");
 
+  const openProtectedFile = async (downloadUrl, fallbackUrl, fileName) => {
+    try {
+      const apiPath = String(downloadUrl || "").replace(/^\/api\/v1/, "");
+      const targetPath = apiPath || fallbackUrl;
+      if (!targetPath) return;
+
+      const response = await api.get(targetPath, {
+        responseType: "blob",
+        headers: {
+          "X-Skip-Auth-Redirect": "true",
+        },
+      });
+
+      const blob = new Blob([response.data]);
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = fileName || "evidence-file";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      setError(err?.response?.data?.message || "Unable to open/download file. Please login again.");
+    }
+  };
+
   useEffect(() => {
     const loadMyUploads = async () => {
       if (!isAuthenticated()) return;
@@ -110,9 +137,18 @@ export default function UploadEvidence() {
                   </span>
                   {file.success && file.url && (
                     <div className="flex flex-col gap-1 mt-1">
-                      <a href={file.downloadUrl || file.url} target="_blank" rel="noreferrer" className="text-sm text-blue-700 underline">
+                      <button
+                        type="button"
+                        onClick={() => openProtectedFile(file.downloadUrl, file.url, file.name)}
+                        className="text-left text-sm text-blue-700 underline"
+                      >
                         View / Download
-                      </a>
+                      </button>
+                      {String(file.uploadedByRole || "").toUpperCase() === "ADMIN" && (
+                        <span className="inline-flex items-center w-fit px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+                          Uploaded by Admin
+                        </span>
+                      )}
                       {(file.uploadedBy || file.uploadedAt) && (
                         <span className="text-xs text-neutral-600">
                           {file.uploadedBy ? `Uploaded by: ${file.uploadedBy} (${file.uploadedByRole || "USER"})` : ""}

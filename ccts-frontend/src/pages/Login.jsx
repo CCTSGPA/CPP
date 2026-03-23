@@ -29,8 +29,8 @@ export default function Login() {
   const [turnstileConfig, setTurnstileConfig] = useState({ enabled: false, siteKey: "" });
   const [turnstileToken, setTurnstileToken] = useState(null);
   
-  // Redirect back to location that requested auth (default to filing complaint)
-  const from = location.state?.from?.pathname || "/file-complaint";
+  // Redirect back to location that requested auth (default to home page)
+  const from = location.state?.from?.pathname || "/home";
 
   const {
     register,

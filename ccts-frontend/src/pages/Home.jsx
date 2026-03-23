@@ -5,24 +5,45 @@ import { FileText, UploadCloud, Download } from "lucide-react";
 import LandingHero from "../components/LandingHero";
 import { Link } from "react-router-dom";
 import { getTransparencyStats } from "../services/publicApi";
+import { isAuthenticated } from "../services/authService";
+import api from "../services/api";
 
 export default function Home() {
   const [stats, setStats] = useState({
     totalComplaintsFiled: 0,
     evidenceUploads: 0,
-    formsAvailable: 0,
+    sharedEvidence: 0,
   });
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const response = await getTransparencyStats();
+        let sharedEvidenceCount = 0;
+
+        if (isAuthenticated()) {
+          try {
+            const filesResponse = await api.get("/files/my");
+            const files = filesResponse?.data?.data || [];
+            sharedEvidenceCount = files.filter(
+              (item) => String(item.uploadedByRole || "").toUpperCase() === "ADMIN"
+            ).length;
+          } catch {
+            sharedEvidenceCount = 0;
+          }
+        }
+
         if (response?.status === 200 && response?.data) {
           setStats({
             totalComplaintsFiled: response.data.totalComplaintsFiled || 0,
             evidenceUploads: response.data.evidenceUploads || 0,
-            formsAvailable: response.data.formsAvailable || 0,
+            sharedEvidence: sharedEvidenceCount,
           });
+        } else {
+          setStats((prev) => ({
+            ...prev,
+            sharedEvidence: sharedEvidenceCount,
+          }));
         }
       } catch {
         // Keep zero defaults if the public stats API is temporarily unavailable.
@@ -75,9 +96,9 @@ export default function Home() {
               icon={<UploadCloud />}
             />
             <StatCard
-              label="Forms available"
-              value={stats.formsAvailable.toLocaleString()}
-              hint="From admin uploads"
+              label="Shared evidence"
+              value={stats.sharedEvidence.toLocaleString()}
+              hint="Sent to your account"
               icon={<Download />}
             />
           </div>
