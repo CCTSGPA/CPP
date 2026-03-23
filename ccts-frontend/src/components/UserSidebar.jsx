@@ -37,7 +37,7 @@ const UserSidebar = () => {
   const userLinks = [
     { path: '/', label: 'Home', icon: Home },
     { path: '/file-complaint', label: 'File Complaint', icon: FileText },
-    { path: '/track-complaint', label: 'Track Complaint', icon: Eye },
+    { path: '/complaint-history', label: 'Complaint History', icon: Eye },
     { path: '/upload-evidence', label: 'Upload Evidence', icon: Upload },
     { path: '/download-forms', label: 'Download Forms', icon: Download },
   ]

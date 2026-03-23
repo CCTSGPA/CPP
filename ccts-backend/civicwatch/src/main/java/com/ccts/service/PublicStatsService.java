@@ -4,7 +4,10 @@ import com.ccts.dto.GeoHeatmapResponse;
 import com.ccts.dto.TransparencyStatsResponse;
 import com.ccts.model.Complaint;
 import com.ccts.model.ComplaintStatus;
+import com.ccts.model.User;
 import com.ccts.repository.ComplaintRepository;
+import com.ccts.repository.DownloadFormRepository;
+import com.ccts.repository.EvidenceUploadRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,14 +30,27 @@ public class PublicStatsService {
     private static final int MODERATE_SEVERITY_THRESHOLD = 40;
 
     private final ComplaintRepository complaintRepository;
+    private final DownloadFormRepository downloadFormRepository;
+    private final EvidenceUploadRepository evidenceUploadRepository;
 
     /**
      * Get anonymized transparency statistics
      */
     public TransparencyStatsResponse getTransparencyStats() {
-        List<Complaint> allComplaints = complaintRepository.findAll();
-        
+        return buildTransparencyStats(complaintRepository.findAll());
+    }
+
+    /**
+     * Get transparency statistics scoped to a single user
+     */
+    public TransparencyStatsResponse getTransparencyStatsForUser(User user) {
+        return buildTransparencyStats(complaintRepository.findByUser(user));
+    }
+
+    private TransparencyStatsResponse buildTransparencyStats(List<Complaint> allComplaints) {
         long totalFiled = allComplaints.size();
+        long evidenceUploads = allComplaints.stream().filter(c -> c.getEvidenceUrl() != null && !c.getEvidenceUrl().isBlank()).count();
+        long formsAvailable = downloadFormRepository.findByActiveTrueOrderByCreatedAtDesc().size();
         long resolved = allComplaints.stream()
             .filter(c -> c.getStatus() == ComplaintStatus.RESOLVED)
             .count();
@@ -98,6 +114,8 @@ public class PublicStatsService {
 
         return TransparencyStatsResponse.builder()
             .totalComplaintsFiled(totalFiled)
+            .evidenceUploads(evidenceUploads)
+            .formsAvailable(formsAvailable)
             .casesResolved(resolved)
             .underInvestigation(underInvestigation)
             .complaintsApproved(approved)

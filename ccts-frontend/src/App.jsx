@@ -1,10 +1,10 @@
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import MainLayout from "./layouts/MainLayout";
 import Home from "./pages/Home";
 import FileComplaint from "./pages/FileComplaint";
-import TrackComplaint from "./pages/TrackComplaint";
+import ComplaintHistory from "./pages/ComplaintHistory";
 import UploadEvidence from "./pages/UploadEvidence";
 import DownloadForms from "./pages/DownloadForms";
 import Departments from "./pages/Departments";
@@ -33,20 +33,22 @@ export default function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-gray-50">
         <Routes>
-          {/* Main user pages with sidebar layout */}
+          {/* Main user pages with shared top navbar layout */}
           <Route element={<MainLayout><Home /></MainLayout>} path="/" />
-          <Route element={<ProtectedRoute><MainLayout><FileComplaint /></MainLayout></ProtectedRoute>} path="/file-complaint" />
-          <Route element={<MainLayout><TrackComplaint /></MainLayout>} path="/track-complaint" />
-          <Route element={<MainLayout><TransparencyReport /></MainLayout>} path="/transparency-report" />
-          <Route element={<MainLayout><GeoHeatmap /></MainLayout>} path="/geo-heatmap" />
-          <Route element={<MainLayout><UploadEvidence /></MainLayout>} path="/upload-evidence" />
-          <Route element={<MainLayout><DownloadForms /></MainLayout>} path="/download-forms" />
-          <Route element={<MainLayout><About /></MainLayout>} path="/about" />
-          <Route element={<MainLayout><Contact /></MainLayout>} path="/contact" />
-          <Route element={<MainLayout><Departments /></MainLayout>} path="/departments" />
-          <Route element={<MainLayout><Guidelines /></MainLayout>} path="/guidelines" />
-          <Route element={<MainLayout><FAQs /></MainLayout>} path="/faqs" />
-          <Route element={<MainLayout><Help /></MainLayout>} path="/help" />
+          <Route element={<ProtectedRoute><FileComplaint /></ProtectedRoute>} path="/file-complaint" />
+          <Route path="/track-complaint" element={<Navigate to="/complaint-history" replace />} />
+          <Route element={<ProtectedRoute><ComplaintHistory /></ProtectedRoute>} path="/complaint-history" />
+          <Route element={<TransparencyReport />} path="/transparency" />
+          <Route element={<TransparencyReport />} path="/transparency-report" />
+          <Route element={<GeoHeatmap />} path="/geo-heatmap" />
+          <Route element={<UploadEvidence />} path="/upload-evidence" />
+          <Route element={<DownloadForms />} path="/download-forms" />
+          <Route element={<About />} path="/about" />
+          <Route element={<Contact />} path="/contact" />
+          <Route element={<Departments />} path="/departments" />
+          <Route element={<Guidelines />} path="/guidelines" />
+          <Route element={<FAQs />} path="/faqs" />
+          <Route element={<Help />} path="/help" />
 
           {/* Auth pages without sidebar */}
           <Route path="/login" element={<Login />} />

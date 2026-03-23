@@ -100,7 +100,7 @@ export default function GeoHeatmap() {
 
       const response = await fetch(`/api/v1/public/geo-heatmap?${params.toString()}`);
       const data = await response.json();
-      if (data.status === "success") {
+      if (data.status === 200 && data.data) {
         setHeatmapData(data.data);
       }
     } catch (err) {

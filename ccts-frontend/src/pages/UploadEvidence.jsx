@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useEffect } from "react";
 import MainLayout from "../layouts/MainLayout";
 import Dropzone from "../components/Dropzone";
 import { isAuthenticated } from "../services/authService";
@@ -10,6 +11,30 @@ export default function UploadEvidence() {
   const [uploading, setUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadMyUploads = async () => {
+      if (!isAuthenticated()) return;
+      try {
+        const response = await api.get("/files/my");
+        const items = response?.data?.data || [];
+        setUploadedFiles(items.map((item) => ({
+          id: item.id,
+          name: item.originalFilename || item.storedFilename,
+          url: item.fileUrl,
+          downloadUrl: item.downloadUrl,
+          success: true,
+          uploadedAt: item.uploadedAt,
+          uploadedBy: item.uploadedBy,
+          uploadedByRole: item.uploadedByRole,
+        })));
+      } catch {
+        // Do not block upload flow if listing fails.
+      }
+    };
+
+    loadMyUploads();
+  }, []);
 
   async function onFiles(files) {
     if (!files.length) return;
@@ -28,8 +53,10 @@ export default function UploadEvidence() {
         });
 
         results.push({
+          id: response.data.data?.id,
           name: file.name,
-          url: response.data.data?.fileUrl,
+          url: response.data.data?.fileUrl || response.data.data?.url,
+          downloadUrl: response.data.data?.downloadUrl,
           success: true
         });
       } catch (err) {
@@ -57,7 +84,7 @@ export default function UploadEvidence() {
         <div className="mt-6">
           <Dropzone onChange={onFiles} disabled={disabled || uploading} />
           <div className="text-sm text-neutral-500 mt-2">
-            Accepted: JPG, PNG images. Max single file 10MB. Remove personal
+            Accepted: JPG, PNG, PDF, TXT files. Max single file 10MB. Remove personal
             identifiers where possible.
           </div>
 
@@ -81,6 +108,19 @@ export default function UploadEvidence() {
                   <span className={file.success ? 'text-green-700' : 'text-red-700'}>
                     {file.name}: {file.success ? 'Uploaded successfully' : file.error}
                   </span>
+                  {file.success && file.url && (
+                    <div className="flex flex-col gap-1 mt-1">
+                      <a href={file.downloadUrl || file.url} target="_blank" rel="noreferrer" className="text-sm text-blue-700 underline">
+                        View / Download
+                      </a>
+                      {(file.uploadedBy || file.uploadedAt) && (
+                        <span className="text-xs text-neutral-600">
+                          {file.uploadedBy ? `Uploaded by: ${file.uploadedBy} (${file.uploadedByRole || "USER"})` : ""}
+                          {file.uploadedAt ? ` • ${new Date(file.uploadedAt).toLocaleString()}` : ""}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

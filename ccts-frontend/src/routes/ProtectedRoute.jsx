@@ -2,11 +2,11 @@ import React from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { isAuthenticated } from "../services/authService";
 
-export default function ProtectedRoute() {
+export default function ProtectedRoute({ children }) {
   const location = useLocation();
 
   if (isAuthenticated()) {
-    return <Outlet />;
+    return children || <Outlet />;
   }
 
   // Not authenticated: redirect to login with original location and friendly message

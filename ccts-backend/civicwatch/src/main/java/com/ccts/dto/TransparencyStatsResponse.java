@@ -18,6 +18,8 @@ import java.util.Map;
 public class TransparencyStatsResponse {
 
     private long totalComplaintsFiled;
+    private long evidenceUploads;
+    private long formsAvailable;
     private long casesResolved;
     private long underInvestigation;
     private long complaintsApproved;

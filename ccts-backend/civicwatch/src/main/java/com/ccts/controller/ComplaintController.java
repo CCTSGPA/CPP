@@ -7,6 +7,7 @@ import com.ccts.dto.ComplaintTrackingDetailsResponse;
 import com.ccts.model.User;
 import com.ccts.service.AuthService;
 import com.ccts.service.ComplaintService;
+import com.ccts.service.PublicStatsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -32,6 +33,7 @@ public class ComplaintController {
 
     private final ComplaintService complaintService;
     private final AuthService authService;
+    private final PublicStatsService publicStatsService;
 
     /**
      * Submit a new complaint
@@ -62,6 +64,20 @@ public class ComplaintController {
         Page<ComplaintResponse> complaints = complaintService.getUserComplaints(user, pageable);
         
         return ResponseEntity.ok(ApiResponse.success("Complaints retrieved", complaints));
+    }
+
+    /**
+     * Get transparency statistics for the authenticated user only
+     * GET /api/v1/complaints/my/transparency-stats
+     */
+    @GetMapping("/my/transparency-stats")
+    public ResponseEntity<ApiResponse<com.ccts.dto.TransparencyStatsResponse>> getMyTransparencyStats(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = authService.getUserByEmail(userDetails.getUsername());
+        com.ccts.dto.TransparencyStatsResponse stats = publicStatsService.getTransparencyStatsForUser(user);
+
+        return ResponseEntity.ok(ApiResponse.success("User transparency statistics retrieved", stats));
     }
 
     /**

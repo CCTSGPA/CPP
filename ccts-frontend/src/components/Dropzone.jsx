@@ -38,7 +38,7 @@ export default function Dropzone({ onChange, disabled = false }) {
           {disabled ? "Upload (view-only)" : "Drag & drop files here"}
         </p>
         <p className="text-sm text-neutral-500 mt-2">
-          PDF, JPG, PNG — max 10MB each
+          JPG, PNG, GIF, WEBP, PDF, TXT — max 10MB each
         </p>
         <input
           type="file"

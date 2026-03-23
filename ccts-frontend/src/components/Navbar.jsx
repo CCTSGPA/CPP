@@ -105,7 +105,7 @@ export default function Navbar() {
             <div className="hidden md:flex items-center gap-2">
               <NavItem to="/">Home</NavItem>
               <NavItem to="/file-complaint">File Complaint</NavItem>
-              <NavItem to="/track-complaint">Track Complaint</NavItem>
+              <NavItem to="/complaint-history">Complaint History</NavItem>
               <NavItem to="/upload-evidence">Upload Evidence</NavItem>
               <NavItem to="/download-forms">Download Forms</NavItem>
             </div>
@@ -281,7 +281,7 @@ export default function Navbar() {
             <Link to="/contact" className="hover:text-[#6A0DAD]">
               Contact Us
             </Link>
-            <Link to="/transparency" className="hover:text-[#6A0DAD]">
+            <Link to="/transparency-report" className="hover:text-[#6A0DAD]">
               Transparency Report
             </Link>
             <Link to="/geo-heatmap" className="hover:text-[#6A0DAD]">
@@ -309,12 +309,12 @@ export default function Navbar() {
                 File Complaint
               </NavLink>
               <NavLink
-                to="/track-complaint"
+                to="/complaint-history"
                 className={({ isActive }) =>
                   isActive ? "text-gov" : "text-neutral-700"
                 }
               >
-                Track Complaint
+                Complaint History
               </NavLink>
               <NavLink
                 to="/upload-evidence"
@@ -351,7 +351,7 @@ export default function Navbar() {
               <Link to="/contact" className="text-neutral-700">
                 Contact Us
               </Link>
-              <Link to="/transparency" className="text-neutral-700">
+              <Link to="/transparency-report" className="text-neutral-700">
                 Transparency Report
               </Link>
               <Link to="/geo-heatmap" className="text-neutral-700">

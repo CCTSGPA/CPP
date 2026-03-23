@@ -28,11 +28,24 @@ export async function submitComplaint(complaintData) {
 
 /**
  * Get all complaints for current user (paginated)
- * GET /api/client/my-complaints?page=0&size=10
+ * GET /api/v1/complaints/my?page=0&size=10
  */
 export async function getMyComplaints(page = 0, size = 10) {
-  const response = await api.get(`/api/client/my-complaints?page=${page}&size=${size}`);
+  const response = await api.get(`/complaints/my?page=${page}&size=${size}`);
   return response.data; // Returns: { status, message, data: { content: [], pageNumber, pageSize, ... } }
+}
+
+/**
+ * Get transparency stats for authenticated user
+ * GET /api/v1/complaints/my/transparency-stats
+ */
+export async function getMyTransparencyStats() {
+  const response = await api.get("/complaints/my/transparency-stats", {
+    headers: {
+      "X-Skip-Auth-Redirect": "true",
+    },
+  });
+  return response.data;
 }
 
 /**

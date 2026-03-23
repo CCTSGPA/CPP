@@ -20,8 +20,8 @@ export default function Hero() {
               >
                 File a Complaint
               </a>
-              <a href="/track-complaint" className="px-5 py-2 rounded border">
-                Track a Complaint
+              <a href="/complaint-history" className="px-5 py-2 rounded border">
+                Complaint History
               </a>
             </div>
           </div>

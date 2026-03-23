@@ -1,22 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import L from 'leaflet'
 import {
-  Map,
   MapPin,
-  Filter,
   RefreshCw,
   AlertTriangle,
   TrendingUp,
   Layers,
-  Search,
-  Calendar
+  Eye,
+  EyeOff
 } from 'lucide-react'
 import { fetchAdminComplaints } from '../services/adminApi'
 
 const GeoIntelligence = () => {
   const mapRef = useRef(null)
   const [map, setMap] = useState(null)
-  const [complaints, setComplaints] = useState([])
+  const [rawComplaints, setRawComplaints] = useState([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({
     department: '',
@@ -27,42 +25,18 @@ const GeoIntelligence = () => {
   })
   const [viewMode, setViewMode] = useState('clusters')
   const [hoveredLocation, setHoveredLocation] = useState(null)
+  const [showLegend, setShowLegend] = useState(true)
+  const [selectedHotspotKey, setSelectedHotspotKey] = useState('')
 
   useEffect(() => {
     const loadComplaints = async () => {
       setLoading(true)
       try {
         const data = await fetchAdminComplaints({ page: 0, size: 500 })
-        const content = data?.content || []
-
-        const groupedByCoordinate = content
-          .filter((item) => item.latitude != null && item.longitude != null)
-          .reduce((acc, item) => {
-            const key = `${item.latitude},${item.longitude}`
-            if (!acc[key]) {
-              acc[key] = {
-                id: key,
-                lat: item.latitude,
-                lng: item.longitude,
-                department: item.respondentDepartment || 'Unspecified',
-                category: item.category || 'Other',
-                count: 0,
-                severity: 'low',
-                rawSeverity: 0
-              }
-            }
-            acc[key].count += 1
-            const severityScore = item.aiSeverityScore || 0
-            if (severityScore > acc[key].rawSeverity) {
-              acc[key].rawSeverity = severityScore
-              acc[key].severity = severityScore >= 75 ? 'high' : severityScore >= 50 ? 'medium' : 'low'
-            }
-            return acc
-          }, {})
-
-        setComplaints(Object.values(groupedByCoordinate))
+        const content = (data?.content || []).filter((item) => item.latitude != null && item.longitude != null)
+        setRawComplaints(content)
       } catch {
-        setComplaints([])
+        setRawComplaints([])
       } finally {
         setLoading(false)
       }
@@ -90,7 +64,79 @@ const GeoIntelligence = () => {
     }
   }, [])
 
-  // Add markers when map or complaints change
+  const filteredRawComplaints = useMemo(() => {
+    return rawComplaints.filter((item) => {
+      const severityScore = item.aiSeverityScore || 0
+      const severity = severityScore >= 75 ? 'high' : severityScore >= 50 ? 'medium' : 'low'
+
+      if (filters.department && (item.respondentDepartment || 'Unspecified') !== filters.department) return false
+      if (filters.category && (item.category || 'Other') !== filters.category) return false
+      if (filters.severity && severity !== filters.severity) return false
+      if (filters.dateFrom) {
+        const createdAt = item.createdAt ? new Date(item.createdAt) : null
+        if (!createdAt || createdAt < new Date(filters.dateFrom)) return false
+      }
+      if (filters.dateTo) {
+        const createdAt = item.createdAt ? new Date(item.createdAt) : null
+        const toDate = new Date(filters.dateTo)
+        toDate.setHours(23, 59, 59, 999)
+        if (!createdAt || createdAt > toDate) return false
+      }
+      return true
+    })
+  }, [rawComplaints, filters])
+
+  const displayedLocations = useMemo(() => {
+    if (viewMode === 'heat') {
+      return filteredRawComplaints.map((item) => {
+        const severityScore = item.aiSeverityScore || 0
+        return {
+          id: item.id,
+          lat: item.latitude,
+          lng: item.longitude,
+          department: item.respondentDepartment || 'Unspecified',
+          category: item.category || 'Other',
+          count: 1,
+          rawSeverity: severityScore,
+          severity: severityScore >= 75 ? 'high' : severityScore >= 50 ? 'medium' : 'low'
+        }
+      })
+    }
+
+    const groupedByCoordinate = filteredRawComplaints.reduce((acc, item) => {
+      const lat = Number(item.latitude)
+      const lng = Number(item.longitude)
+      const key = `${lat.toFixed(3)},${lng.toFixed(3)}`
+      if (!acc[key]) {
+        acc[key] = {
+          id: key,
+          lat,
+          lng,
+          department: item.respondentDepartment || 'Unspecified',
+          category: item.category || 'Other',
+          count: 0,
+          severity: 'low',
+          rawSeverity: 0
+        }
+      }
+      acc[key].count += 1
+      const severityScore = item.aiSeverityScore || 0
+      if (severityScore > acc[key].rawSeverity) {
+        acc[key].rawSeverity = severityScore
+        acc[key].severity = severityScore >= 75 ? 'high' : severityScore >= 50 ? 'medium' : 'low'
+      }
+      return acc
+    }, {})
+
+    return Object.values(groupedByCoordinate)
+  }, [filteredRawComplaints, viewMode])
+
+  const visibleLocations = useMemo(() => {
+    if (!selectedHotspotKey) return displayedLocations
+    return displayedLocations.filter((item) => item.id === selectedHotspotKey)
+  }, [displayedLocations, selectedHotspotKey])
+
+  // Add markers when map data changes
   useEffect(() => {
     if (!map) return
 
@@ -102,7 +148,7 @@ const GeoIntelligence = () => {
     })
 
     // Add markers
-    complaints.forEach((complaint) => {
+    visibleLocations.forEach((complaint) => {
       const severityColors = {
         high: '#ef4444',
         medium: '#f59e0b',
@@ -110,12 +156,14 @@ const GeoIntelligence = () => {
       }
 
       const marker = L.circleMarker([complaint.lat, complaint.lng], {
-        radius: Math.sqrt(complaint.count) * 2,
+        radius: viewMode === 'heat'
+          ? Math.max(8, Math.min(20, 8 + (complaint.rawSeverity || 0) / 8))
+          : Math.max(6, Math.min(20, Math.sqrt(complaint.count) * 4)),
         fillColor: severityColors[complaint.severity],
-        color: '#fff',
-        weight: 2,
+        color: viewMode === 'heat' ? 'transparent' : '#fff',
+        weight: viewMode === 'heat' ? 0 : 2,
         opacity: 1,
-        fillOpacity: 0.7
+        fillOpacity: viewMode === 'heat' ? 0.35 : 0.7
       }).addTo(map)
 
       marker.bindPopup(`
@@ -123,6 +171,7 @@ const GeoIntelligence = () => {
           <h3 class="font-bold">${complaint.department}</h3>
           <p>${complaint.category}</p>
           <p>Complaints: ${complaint.count}</p>
+          <p>Mode: ${viewMode === 'heat' ? 'Heatmap' : 'Cluster'}</p>
         </div>
       `)
 
@@ -134,19 +183,19 @@ const GeoIntelligence = () => {
         setHoveredLocation(null)
       })
     })
-  }, [map, complaints, filters])
+  }, [map, visibleLocations, viewMode])
 
-  const departments = [...new Set(complaints.map((item) => item.department))]
+  const departments = [...new Set(rawComplaints.map((item) => item.respondentDepartment || 'Unspecified'))]
+  const categories = [...new Set(rawComplaints.map((item) => item.category || 'Other'))]
 
-  const filteredComplaints = complaints.filter(c => {
-    if (filters.department && c.department !== filters.department) return false
-    if (filters.severity && c.severity !== filters.severity) return false
-    return true
-  })
+  const filteredComplaints = visibleLocations
 
   const locationStats = filteredComplaints
     .map((item) => ({
+      key: item.id,
       name: `${item.lat.toFixed(2)}, ${item.lng.toFixed(2)}`,
+      lat: item.lat,
+      lng: item.lng,
       complaints: item.count,
       trend: '0%',
       severity: item.severity
@@ -155,6 +204,32 @@ const GeoIntelligence = () => {
     .slice(0, 6)
 
   const hotspotCount = filteredComplaints.filter((item) => item.severity === 'high').length
+
+  const selectedHotspot = useMemo(() => {
+    if (!selectedHotspotKey) return null
+    return displayedLocations.find((item) => item.id === selectedHotspotKey) || null
+  }, [displayedLocations, selectedHotspotKey])
+
+  const activeFilterChips = useMemo(() => {
+    const chips = []
+    if (filters.department) chips.push({ key: 'department', label: `Department: ${filters.department}` })
+    if (filters.category) chips.push({ key: 'category', label: `Category: ${filters.category}` })
+    if (filters.severity) chips.push({ key: 'severity', label: `Severity: ${filters.severity}` })
+    if (filters.dateFrom) chips.push({ key: 'dateFrom', label: `From: ${filters.dateFrom}` })
+    if (filters.dateTo) chips.push({ key: 'dateTo', label: `To: ${filters.dateTo}` })
+    if (selectedHotspot) chips.push({ key: 'hotspot', label: `Hotspot: ${selectedHotspot.lat.toFixed(2)}, ${selectedHotspot.lng.toFixed(2)}` })
+    chips.push({ key: 'mode', label: `Mode: ${viewMode === 'heat' ? 'Heatmap' : 'Clusters'}`, static: true })
+    return chips
+  }, [filters, selectedHotspot, viewMode])
+
+  const clearFilterChip = (key) => {
+    if (key === 'department') setFilters((prev) => ({ ...prev, department: '' }))
+    if (key === 'category') setFilters((prev) => ({ ...prev, category: '' }))
+    if (key === 'severity') setFilters((prev) => ({ ...prev, severity: '' }))
+    if (key === 'dateFrom') setFilters((prev) => ({ ...prev, dateFrom: '' }))
+    if (key === 'dateTo') setFilters((prev) => ({ ...prev, dateTo: '' }))
+    if (key === 'hotspot') setSelectedHotspotKey('')
+  }
 
   if (loading) {
     return (
@@ -175,7 +250,7 @@ const GeoIntelligence = () => {
             </div>
             <div>
               <p className="text-sm text-gray-500">Total Locations</p>
-              <p className="text-xl font-bold text-gray-800">{complaints.length}</p>
+              <p className="text-xl font-bold text-gray-800">{displayedLocations.length}</p>
             </div>
           </div>
         </div>
@@ -197,7 +272,7 @@ const GeoIntelligence = () => {
             </div>
             <div>
               <p className="text-sm text-gray-500">Rising Areas</p>
-              <p className="text-xl font-bold text-gray-800">{filteredComplaints.length}</p>
+              <p className="text-xl font-bold text-gray-800">{filteredRawComplaints.length}</p>
             </div>
           </div>
         </div>
@@ -230,6 +305,14 @@ const GeoIntelligence = () => {
                   {departments.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
                 <select
+                  value={filters.category}
+                  onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <select
                   value={filters.severity}
                   onChange={(e) => setFilters({ ...filters, severity: e.target.value })}
                   className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
@@ -239,8 +322,27 @@ const GeoIntelligence = () => {
                   <option value="medium">Medium</option>
                   <option value="low">Low</option>
                 </select>
+                <input
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
+                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                />
+                <input
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
+                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                />
               </div>
               <div className="flex items-center gap-2 ml-auto">
+                <button
+                  onClick={() => setShowLegend((prev) => !prev)}
+                  className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 ${showLegend ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600'}`}
+                >
+                  {showLegend ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  Legend
+                </button>
                 <button
                   onClick={() => setViewMode('clusters')}
                   className={`px-3 py-1.5 rounded-lg text-sm ${viewMode === 'clusters' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}
@@ -253,7 +355,46 @@ const GeoIntelligence = () => {
                 >
                   Heatmap
                 </button>
+                {selectedHotspotKey && (
+                  <button
+                    onClick={() => setSelectedHotspotKey('')}
+                    className="px-3 py-1.5 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200"
+                  >
+                    Clear Hotspot Filter
+                  </button>
+                )}
               </div>
+            </div>
+
+            <div className="px-4 py-2 border-b bg-gray-50/60 flex flex-wrap items-center gap-2">
+              {activeFilterChips.map((chip) => (
+                <span
+                  key={chip.key}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs border ${chip.static ? 'bg-gray-100 text-gray-700 border-gray-200' : 'bg-purple-50 text-purple-700 border-purple-200'}`}
+                >
+                  {chip.label}
+                  {!chip.static && (
+                    <button
+                      type="button"
+                      onClick={() => clearFilterChip(chip.key)}
+                      className="font-bold leading-none"
+                      title="Remove filter"
+                    >
+                      ×
+                    </button>
+                  )}
+                </span>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setFilters({ department: '', category: '', dateFrom: '', dateTo: '', severity: '' })
+                  setSelectedHotspotKey('')
+                }}
+                className="ml-auto text-xs text-red-700 hover:underline"
+              >
+                Clear all filters
+              </button>
             </div>
 
             {/* Map Container */}
@@ -284,6 +425,7 @@ const GeoIntelligence = () => {
               )}
 
               {/* Legend */}
+              {showLegend && (
               <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg p-3 z-[1000]">
                 <p className="text-xs font-semibold text-gray-600 mb-2">Severity</p>
                 <div className="space-y-1">
@@ -301,6 +443,7 @@ const GeoIntelligence = () => {
                   </div>
                 </div>
               </div>
+              )}
             </div>
           </div>
         </div>
@@ -314,7 +457,17 @@ const GeoIntelligence = () => {
             </div>
             <div className="divide-y divide-gray-100">
               {locationStats.map((location, idx) => (
-                <div key={idx} className="p-3 hover:bg-gray-50">
+                <button
+                  key={location.key}
+                  type="button"
+                  onClick={() => {
+                    setSelectedHotspotKey((prev) => prev === location.key ? '' : location.key)
+                    if (map) {
+                      map.flyTo([location.lat, location.lng], Math.max(map.getZoom(), 8), { duration: 0.8 })
+                    }
+                  }}
+                  className={`w-full text-left p-3 hover:bg-gray-50 ${selectedHotspotKey === location.key ? 'bg-purple-50' : ''}`}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="w-5 h-5 flex items-center justify-center bg-gray-100 rounded text-xs font-medium text-gray-600">
@@ -323,7 +476,7 @@ const GeoIntelligence = () => {
                       <span className="font-medium text-gray-800">{location.name}</span>
                     </div>
                     <span className={`text-xs ${
-                      location.severity === 'high' ? 'text-red-600' : 'text-yellow-600'
+                      location.severity === 'high' ? 'text-red-600' : location.severity === 'medium' ? 'text-yellow-600' : 'text-green-600'
                     }`}>
                       {location.trend}
                     </span>
@@ -331,12 +484,16 @@ const GeoIntelligence = () => {
                   <div className="mt-1 flex items-center justify-between text-sm">
                     <span className="text-gray-500">{location.complaints} complaints</span>
                     <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                      location.severity === 'high' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
+                      location.severity === 'high'
+                        ? 'bg-red-100 text-red-800'
+                        : location.severity === 'medium'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-green-100 text-green-800'
                     }`}>
                       {location.severity}
                     </span>
                   </div>
-                </div>
+                </button>
               ))}
               {locationStats.length === 0 && (
                 <div className="p-3 text-sm text-gray-500">No complaint data available</div>

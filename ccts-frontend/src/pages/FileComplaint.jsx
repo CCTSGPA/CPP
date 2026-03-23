@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -31,6 +32,7 @@ const schema = z.object({
 });
 
 export default function FileComplaint() {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -52,10 +54,16 @@ export default function FileComplaint() {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [locationAccuracy, setLocationAccuracy] = useState(null);
   const [isCapturingImage, setIsCapturingImage] = useState(false);
+  const [notice, setNotice] = useState({ type: "", message: "" });
   
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
+  const redirectTimeoutRef = useRef(null);
+
+  const showNotice = (type, message) => {
+    setNotice({ type, message });
+  };
 
   // Get user's geolocation with high accuracy + reverse geocode
   const getLocation = async () => {
@@ -149,7 +157,7 @@ export default function FileComplaint() {
       }
     } catch (error) {
       console.error("Error accessing camera:", error);
-      alert("Could not access camera. Please check permissions.");
+      showNotice("error", "Could not access camera. Please check permissions.");
       setIsCapturingImage(false);
     }
   };
@@ -187,12 +195,12 @@ export default function FileComplaint() {
     if (file) {
       // Validate file type
       if (!file.type.startsWith("image/")) {
-        alert("Please select an image file");
+        showNotice("error", "Please select an image file.");
         return;
       }
       // Validate file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        alert("File size must be less than 10MB");
+        showNotice("error", "File size must be less than 10MB.");
         return;
       }
 
@@ -208,8 +216,6 @@ export default function FileComplaint() {
   // Upload evidence and get URL
   const uploadEvidence = async (file) => {
     try {
-      const formData = new FormData();
-      formData.append("file", file);
       const response = await uploadFile(file);
       return response.data.url; // Return the URL of the uploaded file
     } catch (error) {
@@ -218,29 +224,52 @@ export default function FileComplaint() {
     }
   };
 
+  const dataUrlToFile = (dataUrl, fileName = "captured-evidence.jpg") => {
+    const [meta, base64] = String(dataUrl).split(",");
+    const mimeMatch = meta && meta.match(/data:(.*?);base64/);
+    const mimeType = mimeMatch?.[1] || "image/jpeg";
+    const binary = atob(base64 || "");
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new File([bytes], fileName, { type: mimeType });
+  };
+
   // Form submission
   const onSubmit = async (data) => {
     // Validate location is in India before submission
     if (!locationDetails) {
-      alert("Please capture your location before submitting the complaint.");
+      showNotice("error", "Please capture your location before submitting the complaint.");
       return;
     }
 
     const locationValidation = isLocationInMaharashtra(locationDetails);
     if (!locationValidation.isValid) {
-      alert(locationValidation.message);
+      showNotice("error", locationValidation.message);
       return;
     }
 
     setIsLoading(true);
+    setNotice({ type: "", message: "" });
     try {
       let evidenceUrl = null;
 
       const incidentDate = new Date().toISOString().slice(0, 19);
 
-      // Upload image if captured/selected
-      if (cameraImage && cameraImage instanceof File) {
-        evidenceUrl = await uploadEvidence(cameraImage);
+      // Upload image if captured from camera (data URL) or selected from filesystem (File)
+      if (cameraImage) {
+        let fileToUpload = null;
+
+        if (cameraImage instanceof File) {
+          fileToUpload = cameraImage;
+        } else if (typeof cameraImage === "string" && cameraImage.startsWith("data:image/")) {
+          fileToUpload = dataUrlToFile(cameraImage);
+        }
+
+        if (fileToUpload) {
+          evidenceUrl = await uploadEvidence(fileToUpload);
+        }
       }
 
       // Prepare complaint data
@@ -265,17 +294,28 @@ export default function FileComplaint() {
 
       const response = await submitComplaint(complaintData);
       
-      if (response.status === "success") {
-        alert(
-          `Complaint submitted successfully!\nTracking Number: ${response.data.trackingNumber}`
-        );
+      const isSuccess =
+        String(response?.status || "").toLowerCase() === "success" ||
+        String(response?.status || "").toLowerCase() === "ok" ||
+        response?.success === true ||
+        !!response?.data?.trackingNumber;
+
+      if (isSuccess) {
+        const trackingNumber = response?.data?.trackingNumber || "N/A";
+        showNotice("success", `Complaint submitted successfully! Tracking Number: ${trackingNumber}. Redirecting to home...`);
         reset();
         setCameraImage(null);
         setImagePreview(null);
         setLocationDetails(null);
         setLocationStatus({ type: "", message: "" });
+        if (redirectTimeoutRef.current) {
+          clearTimeout(redirectTimeoutRef.current);
+        }
+        redirectTimeoutRef.current = setTimeout(() => {
+          navigate("/", { replace: true });
+        }, 1200);
       } else {
-        alert("Failed to submit complaint: " + response.message);
+        showNotice("error", "Failed to submit complaint: " + (response?.message || "Unknown response"));
       }
     } catch (error) {
       console.error("Submission error:", error);
@@ -284,7 +324,7 @@ export default function FileComplaint() {
         error?.response?.data?.error ||
         error?.message ||
         "An error occurred while submitting the complaint. Please try again.";
-      alert(errorMessage);
+      showNotice("error", errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -294,6 +334,9 @@ export default function FileComplaint() {
   useEffect(() => {
     return () => {
       stopCamera();
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -325,6 +368,7 @@ export default function FileComplaint() {
     setImagePreview(null);
     setLocationDetails(null);
     setLocationStatus({ type: "", message: "" });
+    setNotice({ type: "", message: "" });
     setCurrentStep(1);
     setIsWhistleblowerMode(false);
     stopCamera();
@@ -338,6 +382,28 @@ export default function FileComplaint() {
           Use this form to submit allegations. Provide accurate details to help
           the investigation. You can capture photos and location automatically.
         </p>
+
+        {notice.message && (
+          <div
+            className={`mt-4 rounded-lg border px-4 py-3 text-sm ${
+              notice.type === "success"
+                ? "border-green-200 bg-green-50 text-green-800"
+                : "border-red-200 bg-red-50 text-red-700"
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <span>{notice.message}</span>
+              <button
+                type="button"
+                onClick={() => setNotice({ type: "", message: "" })}
+                aria-label="Dismiss notice"
+                className="shrink-0 rounded p-1 leading-none hover:bg-black/5"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Step Indicator */}
         <div className="flex items-center justify-center mt-6 mb-8">

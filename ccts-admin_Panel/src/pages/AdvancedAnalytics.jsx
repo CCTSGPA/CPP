@@ -31,6 +31,8 @@ import {
   Zap
 } from 'lucide-react'
 import { fetchAdminComplaints, fetchAdminStatistics } from '../services/adminApi'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 const AdvancedAnalytics = () => {
   const [timeRange, setTimeRange] = useState('month')
@@ -130,6 +132,95 @@ const AdvancedAnalytics = () => {
     satisfactionScore: { current: highSeverity, target: 0, trend: '0', trendUp: true }
   }
 
+  const exportReport = () => {
+    const stamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+    const sections = []
+
+    sections.push(['Metric', 'Value'])
+    sections.push(['Total Complaints', totalComplaints])
+    sections.push(['Resolved', resolved])
+    sections.push(['Resolution Rate %', resolutionRateValue])
+    sections.push(['SLA Breaches', slaBreaches])
+    sections.push(['SLA Compliance %', slaComplianceValue])
+    sections.push(['High Severity', highSeverity])
+    sections.push([])
+
+    sections.push(['Category', 'Count'])
+    categoryData.forEach((item) => {
+      sections.push([item.name, item.value])
+    })
+    sections.push([])
+
+    sections.push(['Department', 'Resolution %', 'SLA %', 'Avg Time (days)'])
+    departmentPerformance.forEach((item) => {
+      sections.push([item.dept, item.resolution, item.sla, item.avgTime])
+    })
+
+    const escapeCsv = (value) => {
+      const str = String(value ?? '')
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`
+      }
+      return str
+    }
+
+    const csv = sections
+      .map((row) => row.map(escapeCsv).join(','))
+      .join('\n')
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `advanced-analytics-report-${stamp}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  const exportReportPdf = () => {
+    const doc = new jsPDF({ orientation: 'landscape' })
+    const stamp = new Date().toLocaleString()
+
+    doc.setFontSize(14)
+    doc.text('Advanced Analytics Report', 14, 14)
+    doc.setFontSize(9)
+    doc.text(`Generated: ${stamp}`, 14, 20)
+
+    autoTable(doc, {
+      startY: 26,
+      head: [['Metric', 'Value']],
+      body: [
+        ['Total Complaints', totalComplaints],
+        ['Resolved', resolved],
+        ['Resolution Rate %', resolutionRateValue],
+        ['SLA Breaches', slaBreaches],
+        ['SLA Compliance %', slaComplianceValue],
+        ['High Severity', highSeverity]
+      ],
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [109, 40, 217] }
+    })
+
+    autoTable(doc, {
+      head: [['Category', 'Count']],
+      body: categoryData.map((item) => [item.name, item.value]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [34, 139, 230] }
+    })
+
+    autoTable(doc, {
+      head: [['Department', 'Resolution %', 'SLA %', 'Avg Time (days)']],
+      body: departmentPerformance.map((item) => [item.dept, item.resolution, item.sla, item.avgTime]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [16, 185, 129] }
+    })
+
+    const fileStamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+    doc.save(`advanced-analytics-report-${fileStamp}.pdf`)
+  }
+
   const StatCard = ({ title, value, target, trend, trendUp, icon: Icon, suffix = '' }) => (
     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
       <div className="flex items-start justify-between mb-2">
@@ -185,9 +276,19 @@ const AdvancedAnalytics = () => {
             <option value="quarter">Last Quarter</option>
             <option value="year">Last Year</option>
           </select>
-          <button className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+          <button
+            onClick={exportReport}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+          >
             <Download className="w-4 h-4" />
-            Export Report
+            Export CSV
+          </button>
+          <button
+            onClick={exportReportPdf}
+            className="flex items-center gap-2 px-4 py-2 border border-purple-600 text-purple-700 rounded-lg hover:bg-purple-50"
+          >
+            <Download className="w-4 h-4" />
+            Export PDF
           </button>
         </div>
       </div>

@@ -22,6 +22,8 @@ import {
   fetchAdminUserProfile,
   updateAdminComplaintStatus
 } from '../services/adminApi'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 const StatusBadge = ({ status }) => {
   const styles = {
@@ -79,6 +81,94 @@ const ComplaintManagement = () => {
     evidenceReviewStatus: 'UNDER_REVIEW',
     usedInInvestigation: false
   })
+
+  const exportComplaints = () => {
+    const headers = [
+      'Tracking Number',
+      'Title',
+      'Status',
+      'Department',
+      'AI Severity Score',
+      'Progress %',
+      'SLA Deadline',
+      'Created At'
+    ]
+
+    const rows = filteredComplaints.map((item) => [
+      item.trackingNumber || item.id || '',
+      item.title || '',
+      item.status || '',
+      item.respondentDepartment || '',
+      item.aiSeverityScore ?? 0,
+      item.progressPercentage ?? 0,
+      item.slaDeadline ? new Date(item.slaDeadline).toISOString() : '',
+      item.createdAt ? new Date(item.createdAt).toISOString() : ''
+    ])
+
+    const escapeCsv = (value) => {
+      const str = String(value ?? '')
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`
+      }
+      return str
+    }
+
+    const csv = [headers, ...rows]
+      .map((row) => row.map(escapeCsv).join(','))
+      .join('\n')
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    const stamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+    link.href = url
+    link.download = `complaints-export-${stamp}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  const exportComplaintsPdf = () => {
+    const doc = new jsPDF({ orientation: 'landscape' })
+    const stamp = new Date().toLocaleString()
+
+    doc.setFontSize(14)
+    doc.text('Complaint Management Report', 14, 14)
+    doc.setFontSize(9)
+    doc.text(`Generated: ${stamp}`, 14, 20)
+
+    const body = filteredComplaints.map((item) => [
+      item.trackingNumber || item.id || '-',
+      item.title || '-',
+      item.status || '-',
+      item.respondentDepartment || '-',
+      String(item.aiSeverityScore ?? 0),
+      `${item.progressPercentage ?? 0}%`,
+      item.slaDeadline ? new Date(item.slaDeadline).toLocaleDateString() : '-',
+      item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '-'
+    ])
+
+    autoTable(doc, {
+      startY: 26,
+      head: [[
+        'Tracking Number',
+        'Title',
+        'Status',
+        'Department',
+        'AI Score',
+        'Progress',
+        'SLA Deadline',
+        'Created At'
+      ]],
+      body,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [109, 40, 217] }
+    })
+
+    const fileStamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+    doc.save(`complaints-export-${fileStamp}.pdf`)
+  }
 
   useEffect(() => {
     const loadComplaints = async () => {
@@ -210,9 +300,19 @@ const ComplaintManagement = () => {
           </button>
 
           {/* Export */}
-          <button className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+          <button
+            onClick={exportComplaints}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+          >
             <Download className="w-4 h-4" />
-            Export
+            Export CSV
+          </button>
+          <button
+            onClick={exportComplaintsPdf}
+            className="flex items-center gap-2 px-4 py-2 border border-purple-600 text-purple-700 rounded-lg hover:bg-purple-50"
+          >
+            <FileText className="w-4 h-4" />
+            Export PDF
           </button>
         </div>
 
