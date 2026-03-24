@@ -6,7 +6,7 @@ export default function SiteFooter() {
     <footer className="w-full bg-gradient-to-r from-[#6A0DAD] to-[#00CED1] text-gray-100 mt-12">
       <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-4 gap-6">
         <div>
-          <div className="text-white font-semibold text-lg">CCTS</div>
+          <div className="text-white font-semibold text-lg">CivicWatch</div>
           <p className="text-sm text-white/90 mt-2">
             A secure portal for reporting corruption, monitoring progress, and
             accessing official resources.
@@ -41,19 +41,28 @@ export default function SiteFooter() {
           <h4 className="text-sm font-semibold text-white">Legal</h4>
           <ul className="mt-3 space-y-2 text-sm">
             <li>
-              <a href="#" className="text-white/90 hover:text-white">
+              <Link
+                to="/privacy-policy"
+                className="text-white/90 hover:text-white"
+              >
                 Privacy policy
-              </a>
+              </Link>
             </li>
             <li>
-              <a href="#" className="text-white/90 hover:text-white">
+              <Link
+                to="/terms-of-use"
+                className="text-white/90 hover:text-white"
+              >
                 Terms of use
-              </a>
+              </Link>
             </li>
             <li>
-              <a href="#" className="text-white/90 hover:text-white">
+              <Link
+                to="/complaints-procedure"
+                className="text-white/90 hover:text-white"
+              >
                 Complaints procedure
-              </a>
+              </Link>
             </li>
           </ul>
         </div>
@@ -69,8 +78,8 @@ export default function SiteFooter() {
             </li>
             <li className="text-white/90">
               Email:{" "}
-              <a href="mailto:help@ccts.gov" className="underline">
-                help@ccts.gov
+              <a href="mailto:civicwatch.pune@gmail.com" className="underline">
+                civicwatch.pune@gmail.com
               </a>
             </li>
             <li className="text-white/90">Office hours: Mon–Fri, 9am–5pm</li>
@@ -80,7 +89,7 @@ export default function SiteFooter() {
 
       <div className="w-full border-t border-white/20">
         <div className="max-w-7xl mx-auto px-4 py-4 text-sm text-white/80">
-          © {new Date().getFullYear()} CCTS — All rights reserved.
+          © {new Date().getFullYear()} CivicWatch — All rights reserved.
         </div>
       </div>
     </footer>

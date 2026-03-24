@@ -498,5 +498,10 @@
         "id": 100,
         "question": "Can system be upgraded?",
         "answer": "Yes, new features can be added anytime."
+    },
+    {
+        "id": 101,
+        "question": "Thank you",
+        "answer": "You're welcome! If you have any more questions, feel free to ask."
     }
 ]

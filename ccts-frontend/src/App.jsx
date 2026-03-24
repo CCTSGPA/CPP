@@ -14,6 +14,9 @@ import FAQs from "./pages/FAQs";
 import Help from "./pages/Help";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfUse from "./pages/TermsOfUse";
+import ComplaintsProcedure from "./pages/ComplaintsProcedure";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -47,6 +50,9 @@ export default function App() {
           <Route element={<DownloadForms />} path="/download-forms" />
           <Route element={<About />} path="/about" />
           <Route element={<Contact />} path="/contact" />
+          <Route element={<PrivacyPolicy />} path="/privacy-policy" />
+          <Route element={<TermsOfUse />} path="/terms-of-use" />
+          <Route element={<ComplaintsProcedure />} path="/complaints-procedure" />
           <Route element={<Departments />} path="/departments" />
           <Route element={<Guidelines />} path="/guidelines" />
           <Route element={<FAQs />} path="/faqs" />
