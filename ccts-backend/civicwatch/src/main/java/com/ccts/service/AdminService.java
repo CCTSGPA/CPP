@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 
 /**
  * Service for admin operations
@@ -373,6 +374,7 @@ public class AdminService {
                 .progressPercentage(complaint.getProgressPercentage() != null ? complaint.getProgressPercentage() : 0)
                 .createdAt(complaint.getCreatedAt())
                 .updatedAt(complaint.getUpdatedAt())
+                .solvedAt(resolveSolvedAt(complaint))
                 .adminNotes(complaint.getAdminNotes())
                 .rejectionReason(complaint.getRejectionReason())
                 .aiSeverityScore(complaint.getAiSeverityScore())
@@ -386,6 +388,21 @@ public class AdminService {
                 .assignedOfficerId(complaint.getAssignedOfficer() != null ? complaint.getAssignedOfficer().getId() : null)
                 .assignedOfficerName(complaint.getAssignedOfficer() != null ? complaint.getAssignedOfficer().getName() : null)
                 .build();
+    }
+
+    private LocalDateTime resolveSolvedAt(Complaint complaint) {
+        ComplaintStatus status = complaint.getStatus();
+        if (status != ComplaintStatus.RESOLVED && status != ComplaintStatus.REJECTED) {
+            return null;
+        }
+
+        return statusHistoryRepository
+                .findFirstByComplaintIdAndNewStatusInOrderByTimestampDesc(
+                        complaint.getId(),
+                        Arrays.asList(ComplaintStatus.RESOLVED, ComplaintStatus.REJECTED)
+                )
+                .map(StatusHistory::getTimestamp)
+                .orElse(complaint.getUpdatedAt());
     }
 
     private Integer resolveProgress(Integer requestedProgress, ComplaintStatus status) {

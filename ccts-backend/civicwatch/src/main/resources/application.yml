@@ -15,7 +15,7 @@ spring:
   datasource:
     url: jdbc:mysql://${DB_HOST:${SPRING_DATASOURCE_HOST:localhost}}:${DB_PORT:${SPRING_DATASOURCE_PORT:3306}}/${DB_NAME:${SPRING_DATASOURCE_DB:corruption_db}}?createDatabaseIfNotExist=${DB_CREATE_IF_NOT_EXISTS:false}&useSSL=${DB_SSL_ENABLED:false}&requireSSL=${DB_REQUIRE_SSL:false}&verifyServerCertificate=${DB_VERIFY_SERVER_CERT:false}&allowPublicKeyRetrieval=${DB_ALLOW_PUBLIC_KEY_RETRIEVAL:true}&serverTimezone=${DB_SERVER_TIMEZONE:UTC}
     username: ${DB_USERNAME:${SPRING_DATASOURCE_USERNAME:root}}
-    password: ${DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD:Dhruv@07}}
+    password: ${DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD:}}
     driver-class-name: com.mysql.cj.jdbc.Driver
   
   jpa:
@@ -35,20 +35,20 @@ spring:
 
 # JWT Configuration (Base64 encoded secret key)
 jwt:
-  secret: eW91ci1zdXBlci1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tbWFzdC1iZS1hdC1sZWFzdC0zMi1iaXRzLWxvbmc=
+  secret: ${JWT_SECRET:}
   expiration: 3600000  # 1 hour in milliseconds
   refresh-expiration: 604800000  # 7 days
 
 # Twilio Configuration
 twilio:
-  account-sid: ${TWILIO_ACCOUNT_SID:ACe9170ab8669a90f8c4b5fb48e5c21b39}
-  auth-token: ${TWILIO_AUTH_TOKEN:fad7e2acbe847f61250ccf52354040cc}
-  phone-number: ${TWILIO_PHONE_NUMBER:+19062622111}
-  messaging-service-sid: ${TWILIO_MESSAGING_SERVICE_SID:SMbaab2cc73fea2842703c2da94d12e8f3}
+  account-sid: ${TWILIO_ACCOUNT_SID:}
+  auth-token: ${TWILIO_AUTH_TOKEN:}
+  phone-number: ${TWILIO_PHONE_NUMBER:}
+  messaging-service-sid: ${TWILIO_MESSAGING_SERVICE_SID:}
 
 # SendGrid Configuration
 sendgrid:
-  api-key: ${SENDGRID_API_KEY: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}
+  api-key: ${SENDGRID_API_KEY:}
   from-email: ${SENDGRID_FROM_EMAIL:noreply@civicwatch.com}
   from-name: ${SENDGRID_FROM_NAME:CivicWatch}
 

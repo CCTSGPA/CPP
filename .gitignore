@@ -1,0 +1,4 @@
+# Workspace environment files
+ccts-backend/.env
+ccts-admin_Panel/.env
+ccts-frontend/.env

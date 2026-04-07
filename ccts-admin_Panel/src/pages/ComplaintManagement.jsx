@@ -56,6 +56,21 @@ const PriorityBadge = ({ priority }) => {
   )
 }
 
+const formatDate = (value) => {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  return date.toLocaleDateString()
+}
+
+const getSolvedDate = (complaint) => {
+  const terminalStatuses = new Set(['RESOLVED', 'REJECTED'])
+  if (!terminalStatuses.has(String(complaint?.status || ''))) {
+    return null
+  }
+  return complaint?.solvedAt || complaint?.updatedAt || null
+}
+
 const ComplaintManagement = () => {
   const [complaints, setComplaints] = useState([])
   const [loading, setLoading] = useState(true)
@@ -91,7 +106,8 @@ const ComplaintManagement = () => {
       'AI Severity Score',
       'Progress %',
       'SLA Deadline',
-      'Created At'
+      'Submitted Date',
+      'Solved Date'
     ]
 
     const rows = filteredComplaints.map((item) => [
@@ -102,7 +118,8 @@ const ComplaintManagement = () => {
       item.aiSeverityScore ?? 0,
       item.progressPercentage ?? 0,
       item.slaDeadline ? new Date(item.slaDeadline).toISOString() : '',
-      item.createdAt ? new Date(item.createdAt).toISOString() : ''
+      item.createdAt ? new Date(item.createdAt).toISOString() : '',
+      getSolvedDate(item) ? new Date(getSolvedDate(item)).toISOString() : ''
     ])
 
     const escapeCsv = (value) => {
@@ -146,7 +163,8 @@ const ComplaintManagement = () => {
       String(item.aiSeverityScore ?? 0),
       `${item.progressPercentage ?? 0}%`,
       item.slaDeadline ? new Date(item.slaDeadline).toLocaleDateString() : '-',
-      item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '-'
+      formatDate(item.createdAt),
+      formatDate(getSolvedDate(item))
     ])
 
     autoTable(doc, {
@@ -159,7 +177,8 @@ const ComplaintManagement = () => {
         'AI Score',
         'Progress',
         'SLA Deadline',
-        'Created At'
+        'Submitted Date',
+        'Solved Date'
       ]],
       body,
       styles: { fontSize: 8, cellPadding: 2 },
@@ -384,6 +403,8 @@ const ComplaintManagement = () => {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Priority</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Department</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">AI Score</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Submitted Date</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Solved Date</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">SLA</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Progress</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
@@ -426,6 +447,8 @@ const ComplaintManagement = () => {
                       <span className="text-xs text-gray-500">{complaint.aiSeverityScore || 0}</span>
                     </div>
                   </td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{formatDate(complaint.createdAt)}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{formatDate(getSolvedDate(complaint))}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs ${(complaint.slaBreached) ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
                       {complaint.slaDeadline ? new Date(complaint.slaDeadline).toLocaleDateString() : '-'}
@@ -461,7 +484,7 @@ const ComplaintManagement = () => {
               ))}
               {filteredComplaints.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-sm text-gray-500">No complaints found.</td>
+                  <td colSpan={11} className="px-4 py-8 text-center text-sm text-gray-500">No complaints found.</td>
                 </tr>
               )}
             </tbody>

@@ -50,6 +50,7 @@ public class ComplaintResponse {
     private Integer progressPercentage;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime solvedAt;
     private String adminNotes;
     private String rejectionReason;
     private Integer aiSeverityScore;

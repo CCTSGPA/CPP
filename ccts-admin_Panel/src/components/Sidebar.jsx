@@ -48,7 +48,7 @@ const Sidebar = () => {
             <Shield className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-white font-bold text-lg">CCTS</h1>
+            <h1 className="text-white font-bold text-lg">CivicWatch</h1>
             <p className="text-gray-400 text-xs">Admin Panel</p>
           </div>
         </div>

@@ -122,7 +122,7 @@ export default function SignUp() {
                 {...register("name")}
                 type="text"
                 className="w-full border border-neutral-200 rounded-xl py-3 pl-10 pr-3 focus:outline-none focus:ring-2 focus:ring-gov/30"
-                placeholder="John Doe"
+                placeholder="Ajit Doval"required
               />
             </div>
             {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>}

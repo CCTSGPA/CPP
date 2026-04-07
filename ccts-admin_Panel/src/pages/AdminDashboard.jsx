@@ -251,21 +251,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Department Risk Table */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Department Performance</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={departmentData} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis type="number" stroke="#6b7280" />
-            <YAxis dataKey="department" type="category" stroke="#6b7280" width={100} />
-            <Tooltip
-              contentStyle={{ backgroundColor: '#fff', border: 'none', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-            />
-            <Bar dataKey="complaints" fill="#8b5cf6" name="Complaints" radius={[0, 4, 4, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+   
 
       {/* Recent Activity */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
