@@ -109,7 +109,7 @@ export default function DownloadForms() {
                       Uploaded by: {ev.uploadedBy || "Admin"} ({ev.uploadedByRole || "ADMIN"})
                     </div>
                     <div className="text-xs text-neutral-500 mt-1">
-                      Uploaded: {ev.uploadedAt ? new Date(ev.uploadedAt).toLocaleString() : "-"}
+                      Uploaded: {ev.uploadedAt ? new Date(ev.uploadedAt).toLocaleString("en-US", { hour12: true }) : "-"}
                     </div>
                   </div>
                   <button

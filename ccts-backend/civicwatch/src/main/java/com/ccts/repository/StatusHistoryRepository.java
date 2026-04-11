@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -34,4 +35,7 @@ public interface StatusHistoryRepository extends JpaRepository<StatusHistory, Lo
     Page<StatusHistory> findAllBy(Pageable pageable);
 
     Optional<StatusHistory> findFirstByComplaintIdAndNewStatusInOrderByTimestampDesc(Long complaintId, List<ComplaintStatus> statuses);
+
+    @Transactional
+    void deleteByComplaintId(Long complaintId);
 }

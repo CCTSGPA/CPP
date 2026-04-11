@@ -378,7 +378,7 @@ const AdminDashboard = () => {
                   <p className="text-xs text-gray-500">Status: {String(complaint.status || '').replace('_', ' ')}</p>
                 </div>
               </div>
-              <span className="text-xs text-gray-400">{complaint.createdAt ? new Date(complaint.createdAt).toLocaleString() : '-'}</span>
+              <span className="text-xs text-gray-400">{complaint.createdAt ? new Date(complaint.createdAt).toLocaleString('en-US', { hour12: true }) : '-'}</span>
             </div>
           ))}
           {complaints.length === 0 && (

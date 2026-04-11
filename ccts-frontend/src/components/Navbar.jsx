@@ -30,6 +30,27 @@ export default function Navbar() {
   const [searchTrackingNumber, setSearchTrackingNumber] = useState("");
   const deptRef = useRef(null);
   const deptToggleRef = useRef(null);
+  const deptHoverTimeoutRef = useRef(null);
+
+  const clearDeptHoverTimeout = () => {
+    if (deptHoverTimeoutRef.current) {
+      clearTimeout(deptHoverTimeoutRef.current);
+      deptHoverTimeoutRef.current = null;
+    }
+  };
+
+  const openDeptMenu = () => {
+    clearDeptHoverTimeout();
+    setDeptOpen(true);
+  };
+
+  const closeDeptMenuWithDelay = () => {
+    clearDeptHoverTimeout();
+    deptHoverTimeoutRef.current = setTimeout(() => {
+      setDeptOpen(false);
+      deptHoverTimeoutRef.current = null;
+    }, 120);
+  };
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
@@ -89,6 +110,7 @@ export default function Navbar() {
     document.addEventListener("keydown", handleKey);
     window.addEventListener('authChanged', handleAuthChanged);
     return () => {
+      clearDeptHoverTimeout();
       document.removeEventListener("click", handleDoc);
       document.removeEventListener("keydown", handleKey);
       window.removeEventListener('authChanged', handleAuthChanged);
@@ -200,14 +222,20 @@ export default function Navbar() {
           <div className="border-t mt-2" />
           <div className="flex items-center justify-between py-2 text-sm">
             <div className="flex items-center gap-4 text-neutral-600">
-            {/* Departments dropdown: supports click-to-open (persists) and hover-to-open on desktop */}
-            <div className="relative group">
+            {/* Departments dropdown: supports click-to-open and hover-to-open on desktop */}
+            <div
+              className="relative"
+              onMouseEnter={openDeptMenu}
+              onMouseLeave={closeDeptMenuWithDelay}
+            >
               <button
                 ref={deptToggleRef}
                 onClick={(e) => {
                   e.preventDefault();
+                  clearDeptHoverTimeout();
                   setDeptOpen((s) => !s);
                 }}
+                onFocus={openDeptMenu}
                 aria-haspopup="true"
                 aria-expanded={deptOpen}
                 className="flex items-center gap-1 hover:text-[#6A0DAD]"
@@ -217,6 +245,8 @@ export default function Navbar() {
 
               <div
                 ref={deptRef}
+                onMouseEnter={openDeptMenu}
+                onMouseLeave={closeDeptMenuWithDelay}
                 className={`absolute left-0 mt-2 bg-white shadow-soft rounded-lg p-3 w-56 ${
                   deptOpen ? "block" : "hidden"
                 }`}

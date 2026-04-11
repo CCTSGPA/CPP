@@ -91,7 +91,7 @@ const EvidenceControl = () => {
         name: item.fileName || `evidence-${item.complaintId}`,
         type: item.fileType || 'unknown',
         size: 0,
-        uploadDate: item.uploadDate ? new Date(item.uploadDate).toLocaleString() : '-',
+        uploadDate: item.uploadDate ? new Date(item.uploadDate).toLocaleString('en-US', { hour12: true }) : '-',
         complaintId: item.complaintTrackingNumber || String(item.complaintId || ''),
         sha256: item.sha256 || 'Not available',
         integrityStatus: item.integrityStatus || 'UNKNOWN',
@@ -99,7 +99,7 @@ const EvidenceControl = () => {
         metadata: {
           fileUrl: item.fileUrl || 'Not available',
           complaintId: item.complaintId || '-',
-          uploadDate: item.uploadDate ? new Date(item.uploadDate).toLocaleString() : '-'
+          uploadDate: item.uploadDate ? new Date(item.uploadDate).toLocaleString('en-US', { hour12: true }) : '-'
         }
       })))
     } catch {

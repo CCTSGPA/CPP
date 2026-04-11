@@ -176,7 +176,7 @@ export default function TrackComplaint() {
 										<p className="font-medium text-slate-900">{item.title || toLabel(item.newStatus)}</p>
 										<p className="mt-1 text-neutral-600">{item.publicSummary || item.comment || "Update posted"}</p>
 										<p className="mt-1 text-xs text-neutral-500">
-											{item.timestamp ? new Date(item.timestamp).toLocaleString() : "-"}
+											{item.timestamp ? new Date(item.timestamp).toLocaleString("en-US", { hour12: true }) : "-"}
 										</p>
 									</div>
 								))}

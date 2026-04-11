@@ -45,7 +45,7 @@ const AuditLogs = () => {
           ].filter(Boolean).join(' | '),
           ip: 'N/A',
           device: 'N/A',
-          timestamp: item.timestamp ? new Date(item.timestamp).toLocaleString() : '-',
+          timestamp: item.timestamp ? new Date(item.timestamp).toLocaleString('en-US', { hour12: true }) : '-',
           status: 'success'
         })))
       } catch {

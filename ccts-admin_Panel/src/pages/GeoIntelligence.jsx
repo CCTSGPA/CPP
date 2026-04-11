@@ -14,7 +14,12 @@ import { fetchAdminComplaints, fetchPublicGeoHeatmap } from '../services/adminAp
 
 const GeoIntelligence = () => {
   const mapRef = useRef(null)
+  const mapInstanceRef = useRef(null)
+  const tileLayerRef = useRef(null)
   const [map, setMap] = useState(null)
+  const [mapReady, setMapReady] = useState(false)
+  const [mapError, setMapError] = useState('')
+  const [tileError, setTileError] = useState('')
   const [rawComplaints, setRawComplaints] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
@@ -72,22 +77,98 @@ const GeoIntelligence = () => {
   }, [])
 
   useEffect(() => {
-    // Initialize map
-    if (mapRef.current && !map) {
-      const mapInstance = L.map(mapRef.current).setView([20.5937, 78.9629], 5)
-      
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(mapInstance)
+    if (loading) return
+    if (!mapRef.current || mapInstanceRef.current) return
 
-      setMap(mapInstance)
-      setTimeout(() => mapInstance.invalidateSize(), 0)
-    }
-
-    return () => {
-      if (map) {
-        map.remove()
+    try {
+      // Dev hot-reload/StrictMode can leave a stale container instance.
+      if (mapRef.current._leaflet_id) {
+        mapRef.current._leaflet_id = null
       }
+
+      const mapInstance = L.map(mapRef.current, {
+        zoomControl: true,
+        preferCanvas: true
+      }).setView([20.5937, 78.9629], 5)
+
+      const tileSources = [
+        {
+          url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          attribution: '© OpenStreetMap contributors'
+        },
+        {
+          url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+          attribution: '© OpenStreetMap contributors © CARTO'
+        }
+      ]
+
+      let sourceIndex = 0
+      let tileErrorCount = 0
+
+      const attachLayer = () => {
+        if (!mapInstance) return
+        if (tileLayerRef.current) {
+          mapInstance.removeLayer(tileLayerRef.current)
+          tileLayerRef.current = null
+        }
+
+        const layer = L.tileLayer(tileSources[sourceIndex].url, {
+          attribution: tileSources[sourceIndex].attribution,
+          crossOrigin: true
+        })
+
+        layer.on('load', () => {
+          setTileError('')
+          setMapReady(true)
+        })
+
+        layer.on('tileerror', () => {
+          tileErrorCount += 1
+          if (tileErrorCount >= 6 && sourceIndex < tileSources.length - 1) {
+            sourceIndex += 1
+            tileErrorCount = 0
+            attachLayer()
+            return
+          }
+          if (sourceIndex === tileSources.length - 1) {
+            setTileError('Map tiles failed to load. Please check internet or firewall settings.')
+          }
+        })
+
+        layer.addTo(mapInstance)
+        tileLayerRef.current = layer
+      }
+
+      attachLayer()
+      mapInstanceRef.current = mapInstance
+      setMap(mapInstance)
+      requestAnimationFrame(() => mapInstance.invalidateSize())
+      setTimeout(() => mapInstance.invalidateSize(), 180)
+      setTimeout(() => mapInstance.invalidateSize(), 500)
+      setMapError('')
+    } catch (err) {
+      setMapError(err?.message || 'Map initialization failed')
+    }
+  }, [loading])
+
+  useEffect(() => {
+    if (!map || !mapRef.current) return
+
+    const observer = new ResizeObserver(() => {
+      map.invalidateSize()
+    })
+
+    observer.observe(mapRef.current)
+    return () => observer.disconnect()
+  }, [map])
+
+  useEffect(() => {
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove()
+        mapInstanceRef.current = null
+      }
+      tileLayerRef.current = null
     }
   }, [])
 
@@ -449,8 +530,23 @@ const GeoIntelligence = () => {
             </div>
 
             {/* Map Container */}
-            <div className="relative">
-              <div ref={mapRef} className="h-[500px] w-full"></div>
+            <div className="relative h-[500px]">
+              <div ref={mapRef} id="geo-map-canvas" className="leaflet-map-host h-full w-full"></div>
+              {!mapReady && !mapError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 z-[1100]">
+                  <div className="text-sm text-gray-600">Initializing map...</div>
+                </div>
+              )}
+              {mapError && (
+                <div className="absolute top-4 left-4 right-4 bg-red-50 border border-red-200 rounded-lg p-3 z-[1200] text-sm text-red-700">
+                  {mapError}
+                </div>
+              )}
+              {tileError && !mapError && (
+                <div className="absolute top-4 left-4 right-4 bg-amber-50 border border-amber-200 rounded-lg p-3 z-[1200] text-sm text-amber-800">
+                  {tileError}
+                </div>
+              )}
               {filteredComplaints.length === 0 && (
                 <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-3 z-[1000] text-sm text-gray-600">
                   No complaint data available

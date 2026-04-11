@@ -7,6 +7,7 @@ import com.ccts.model.User;
 import com.ccts.model.UserRole;
 import com.ccts.repository.EvidenceUploadRepository;
 import com.ccts.repository.UserRepository;
+import org.springframework.dao.DataAccessException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -187,6 +188,45 @@ public class FileController {
                 .contentLength(content.length)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + downloadName + "\"")
                 .body(content);
+    }
+
+    /**
+     * Delete an uploaded evidence file owned by the authenticated user.
+     * Admin can delete any uploaded evidence file.
+     * DELETE /api/v1/files/{uploadId}
+     */
+    @DeleteMapping("/{uploadId}")
+    public ResponseEntity<ApiResponse<String>> deleteFile(
+            @PathVariable Long uploadId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User requestUser = getAuthenticatedUser(userDetails);
+        EvidenceUpload upload = evidenceUploadRepository.findWithUserById(Objects.requireNonNull(uploadId))
+                .orElseThrow(() -> CustomException.notFound("Uploaded file not found"));
+
+        boolean isAdmin = requestUser.getRole() == UserRole.ADMIN;
+        boolean isOwner = upload.getUser() != null && upload.getUser().getId().equals(requestUser.getId());
+        if (!isAdmin && !isOwner) {
+            throw CustomException.forbidden("You are not authorized to delete this file");
+        }
+
+        try {
+            if (upload.getStoredFilename() != null && !upload.getStoredFilename().isBlank()) {
+                Path uploadPath = Paths.get(uploadDir);
+                Path filePath = uploadPath.resolve(upload.getStoredFilename());
+                Files.deleteIfExists(filePath);
+            }
+        } catch (IOException ignored) {
+            // Continue delete even if local disk copy is already absent.
+        } catch (RuntimeException ex) {
+            throw CustomException.badRequest("Failed to process file path for deletion");
+        }
+
+        try {
+            evidenceUploadRepository.delete(upload);
+        } catch (DataAccessException ex) {
+            throw CustomException.badRequest("Unable to delete file due to data integrity constraints");
+        }
+        return ResponseEntity.ok(ApiResponse.success("File deleted successfully", "deleted"));
     }
 
     private User getAuthenticatedUser(UserDetails userDetails) {

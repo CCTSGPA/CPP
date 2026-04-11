@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Builder
 public class ApiResponse<T> {
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd hh:mm:ss a")
     private LocalDateTime timestamp;
 
     private int status;

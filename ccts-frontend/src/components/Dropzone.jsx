@@ -1,16 +1,31 @@
 import React, { useCallback, useState } from "react";
 
-export default function Dropzone({ onChange, disabled = false }) {
-  const [files, setFiles] = useState([]);
+export default function Dropzone({ onChange, disabled = false, files = null, onRemoveFile }) {
+  const [internalFiles, setInternalFiles] = useState([]);
+  const selectedFiles = Array.isArray(files) ? files : internalFiles;
 
   const handleFiles = useCallback(
     (selected) => {
       const arr = Array.from(selected).slice(0, 5);
-      setFiles(arr);
+      if (!Array.isArray(files)) {
+        setInternalFiles(arr);
+      }
       onChange?.(arr);
     },
-    [onChange]
+    [files, onChange]
   );
+
+  const removeFile = useCallback((index) => {
+    const next = selectedFiles.filter((_, i) => i !== index);
+    if (!Array.isArray(files)) {
+      setInternalFiles(next);
+    }
+    if (onRemoveFile) {
+      onRemoveFile(index, next);
+      return;
+    }
+    onChange?.(next);
+  }, [files, onChange, onRemoveFile, selectedFiles]);
 
   function onDrop(e) {
     e.preventDefault();
@@ -54,9 +69,9 @@ export default function Dropzone({ onChange, disabled = false }) {
         )}
       </div>
 
-      {files.length > 0 && (
+      {selectedFiles.length > 0 && (
         <ul className="mt-3 space-y-2">
-          {files.map((f, i) => (
+          {selectedFiles.map((f, i) => (
             <li
               key={i}
               className="flex items-center justify-between p-2 border rounded"
@@ -67,7 +82,17 @@ export default function Dropzone({ onChange, disabled = false }) {
                   {Math.round(f.size / 1024)} KB
                 </div>
               </div>
-              <div className="text-xs text-neutral-500">{f.type || "—"}</div>
+              <div className="flex items-center gap-3">
+                <div className="text-xs text-neutral-500">{f.type || "—"}</div>
+                <button
+                  type="button"
+                  onClick={() => removeFile(i)}
+                  className="text-xs text-red-600 underline"
+                  disabled={disabled}
+                >
+                  Remove
+                </button>
+              </div>
             </li>
           ))}
         </ul>

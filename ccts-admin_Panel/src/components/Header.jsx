@@ -305,7 +305,7 @@ const Header = () => {
                       </p>
                       <div className="mt-1 flex items-center justify-between">
                         <p className="text-[11px] text-gray-400">
-                          {item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Just now'}
+                          {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US', { hour12: true }) : 'Just now'}
                         </p>
                         {!isRead && <span className="text-[10px] text-purple-700 font-semibold">Unread</span>}
                       </div>
@@ -323,7 +323,7 @@ const Header = () => {
               {currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
             </span>
             <span className="text-sm text-gray-500">
-              {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
             </span>
           </div>
 

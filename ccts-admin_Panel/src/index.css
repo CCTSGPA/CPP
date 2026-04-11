@@ -127,9 +127,26 @@ body {
 
 /* Leaflet Map Fixes */
 .leaflet-container {
-  height: 100%;
   width: 100%;
   border-radius: 0.5rem;
+  background: #f1f5f9;
+}
+
+.leaflet-map-host {
+  min-height: 500px;
+}
+
+#geo-map-canvas {
+  height: 100% !important;
+  min-height: 500px;
+}
+
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-pane,
+.leaflet-overlay-pane,
+.leaflet-control {
+  z-index: 400;
 }
 
 /* Data Table Styles */

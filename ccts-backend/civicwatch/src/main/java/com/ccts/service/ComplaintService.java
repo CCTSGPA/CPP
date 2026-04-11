@@ -276,6 +276,25 @@ public class ComplaintService {
         return response;
     }
 
+    @Transactional
+    @CacheEvict(value = {"transparencyStats", "geoHeatmap"}, allEntries = true)
+    public void deleteResolvedComplaintByUser(Long complaintId, User user) {
+        Complaint complaint = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> CustomException.notFound("Complaint not found"));
+
+        boolean owner = complaint.getUser() != null && complaint.getUser().getId().equals(user.getId());
+        if (!owner) {
+            throw CustomException.forbidden("You are not authorized to delete this complaint");
+        }
+
+        if (complaint.getStatus() != ComplaintStatus.RESOLVED) {
+            throw CustomException.badRequest("Only resolved complaints can be deleted");
+        }
+
+        statusHistoryRepository.deleteByComplaintId(complaintId);
+        complaintRepository.delete(complaint);
+    }
+
     private LocalDateTime calculateSlaDeadline(Complaint complaint) {
         if (complaint.getCreatedAt() == null) {
             return null;

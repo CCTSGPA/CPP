@@ -172,3 +172,21 @@ export async function assignDepartment(id, department) {
 export async function closeComplaint(id) {
   return updateComplaintStatus(id, "RESOLVED");
 }
+
+/**
+ * Delete resolved complaint owned by current user
+ * DELETE /api/v1/complaints/{id}
+ */
+export async function deleteResolvedComplaint(id) {
+  const response = await api.delete(`/complaints/${id}`);
+  return response.data;
+}
+
+/**
+ * Delete evidence file owned by current user
+ * DELETE /api/v1/files/{uploadId}
+ */
+export async function deleteMyEvidenceFile(uploadId) {
+  const response = await api.delete(`/files/${uploadId}`);
+  return response.data;
+}

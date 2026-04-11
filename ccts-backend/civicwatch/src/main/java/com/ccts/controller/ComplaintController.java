@@ -119,6 +119,20 @@ public class ComplaintController {
         ComplaintTrackingDetailsResponse response = complaintService.getComplaintTrackingDetails(trackingNumber);
         return ResponseEntity.ok(ApiResponse.success("Complaint tracking details retrieved", response));
     }
+
+    /**
+     * Delete a resolved complaint owned by authenticated user
+     * DELETE /api/v1/complaints/{id}
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<String>> deleteResolvedComplaint(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = authService.getUserByEmail(userDetails.getUsername());
+        complaintService.deleteResolvedComplaintByUser(id, user);
+        return ResponseEntity.ok(ApiResponse.success("Complaint deleted successfully", "deleted"));
+    }
 }
 
 

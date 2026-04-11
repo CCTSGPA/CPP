@@ -181,7 +181,7 @@ const AdvancedAnalytics = () => {
 
   const exportReportPdf = () => {
     const doc = new jsPDF({ orientation: 'landscape' })
-    const stamp = new Date().toLocaleString()
+    const stamp = new Date().toLocaleString('en-US', { hour12: true })
 
     doc.setFontSize(14)
     doc.text('Advanced Analytics Report', 14, 14)

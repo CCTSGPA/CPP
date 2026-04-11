@@ -202,7 +202,7 @@ const ComplaintManagement = () => {
 
   const exportComplaintsPdf = () => {
     const doc = new jsPDF({ orientation: 'landscape' })
-    const stamp = new Date().toLocaleString()
+    const stamp = new Date().toLocaleString('en-US', { hour12: true })
 
     doc.setFontSize(14)
     doc.text('Complaint Management Report', 14, 14)
@@ -817,7 +817,7 @@ const ComplaintManagement = () => {
                     <div>
                       <p className="text-xs text-gray-500">SLA Deadline</p>
                       <p className="text-sm font-medium text-orange-600">
-                        {selectedComplaint.slaDeadline ? new Date(selectedComplaint.slaDeadline).toLocaleString() : '-'}
+                        {selectedComplaint.slaDeadline ? new Date(selectedComplaint.slaDeadline).toLocaleString('en-US', { hour12: true }) : '-'}
                       </p>
                     </div>
                     <div className="pt-2 border-t border-gray-200">
@@ -842,8 +842,8 @@ const ComplaintManagement = () => {
                     <div><span className="text-gray-500">Email:</span> <span className="font-medium">{selectedUserProfile.email}</span></div>
                     <div><span className="text-gray-500">Role:</span> <span className="font-medium">{selectedUserProfile.role}</span></div>
                     <div><span className="text-gray-500">Provider:</span> <span className="font-medium">{selectedUserProfile.authProvider || 'local'}</span></div>
-                    <div><span className="text-gray-500">Created:</span> <span className="font-medium">{selectedUserProfile.accountCreatedAt ? new Date(selectedUserProfile.accountCreatedAt).toLocaleString() : '-'}</span></div>
-                    <div><span className="text-gray-500">Last Login:</span> <span className="font-medium">{selectedUserProfile.lastLoginAt ? new Date(selectedUserProfile.lastLoginAt).toLocaleString() : '-'}</span></div>
+                    <div><span className="text-gray-500">Created:</span> <span className="font-medium">{selectedUserProfile.accountCreatedAt ? new Date(selectedUserProfile.accountCreatedAt).toLocaleString('en-US', { hour12: true }) : '-'}</span></div>
+                    <div><span className="text-gray-500">Last Login:</span> <span className="font-medium">{selectedUserProfile.lastLoginAt ? new Date(selectedUserProfile.lastLoginAt).toLocaleString('en-US', { hour12: true }) : '-'}</span></div>
                   </div>
                 ) : (
                   <div className="text-sm text-gray-500">User profile not available.</div>
@@ -980,7 +980,7 @@ const ComplaintManagement = () => {
                         <p className="text-xs text-gray-500">by {log.changedBy || 'System'}</p>
                         <p className="text-xs text-gray-500">{log.publicSummary || log.comment || 'Update posted'}</p>
                       </div>
-                      <span className="text-xs text-gray-400">{log.timestamp ? new Date(log.timestamp).toLocaleString() : '-'}</span>
+                      <span className="text-xs text-gray-400">{log.timestamp ? new Date(log.timestamp).toLocaleString('en-US', { hour12: true }) : '-'}</span>
                     </div>
                   ))}
                 </div>

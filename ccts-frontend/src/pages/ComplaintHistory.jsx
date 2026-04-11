@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Bell, Clock3, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import MainLayout from "../layouts/MainLayout";
-import { getMyComplaints, trackComplaintDetails } from "../services/complaintsService";
+import { deleteResolvedComplaint, getMyComplaints, trackComplaintDetails } from "../services/complaintsService";
 
 const statusStyles = {
 	SUBMITTED: "bg-blue-100 text-blue-800",
@@ -32,6 +32,7 @@ export default function ComplaintHistory() {
 	const [error, setError] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [isLoadingList, setIsLoadingList] = useState(false);
+	const [deletingComplaint, setDeletingComplaint] = useState(false);
 	const [totalComplaints, setTotalComplaints] = useState(0);
 
 	async function loadHistory() {
@@ -103,6 +104,25 @@ export default function ComplaintHistory() {
 		}, 15000);
 		return () => clearInterval(interval);
 	}, [selectedTrackingNumber]);
+
+	async function handleDeleteResolvedComplaint() {
+		if (!status?.complaint?.id) return;
+		if (String(status.complaint.status || "").toUpperCase() !== "RESOLVED") return;
+		if (!window.confirm(`Delete complaint ${status.complaint.trackingNumber}? This cannot be undone.`)) return;
+
+		setDeletingComplaint(true);
+		setError("");
+		try {
+			await deleteResolvedComplaint(status.complaint.id);
+			setStatus(null);
+			setSelectedTrackingNumber("");
+			await loadHistory();
+		} catch (err) {
+			setError(err?.response?.data?.message || err?.message || "Unable to delete complaint");
+		} finally {
+			setDeletingComplaint(false);
+		}
+	}
 
 	return (
 		<MainLayout>
@@ -207,6 +227,18 @@ export default function ComplaintHistory() {
 										<div className="h-2 bg-neutral-200 rounded-full overflow-hidden">
 											<div className="h-full bg-gov" style={{ width: `${Math.max(0, Math.min(100, status.progress))}%` }} />
 										</div>
+										{String(status.complaint.status || "").toUpperCase() === "RESOLVED" && (
+											<div className="mt-4">
+												<button
+													type="button"
+													onClick={handleDeleteResolvedComplaint}
+													disabled={deletingComplaint}
+													className="px-3 py-2 border border-red-300 text-red-700 rounded text-sm hover:bg-red-50 disabled:opacity-60"
+												>
+													{deletingComplaint ? "Deleting..." : "Delete Complaint"}
+												</button>
+											</div>
+										)}
 									</div>
 								</div>
 
@@ -220,7 +252,7 @@ export default function ComplaintHistory() {
 												<div className="text-sm">
 													<div className="font-medium">{item.title || toLabel(item.newStatus)}</div>
 													<div className="text-neutral-500">{item.publicSummary || item.comment || "Update posted"}</div>
-													<div className="text-xs text-neutral-400 mt-0.5">{item.timestamp ? new Date(item.timestamp).toLocaleString() : "-"}</div>
+													<div className="text-xs text-neutral-400 mt-0.5">{item.timestamp ? new Date(item.timestamp).toLocaleString("en-US", { hour12: true }) : "-"}</div>
 												</div>
 											</div>
 										))}
@@ -248,7 +280,7 @@ export default function ComplaintHistory() {
 											<div key={`ev-${idx}`} className="border rounded p-3 text-sm">
 												<div className="font-medium">{ev.fileName || "Evidence file"}</div>
 												<div className="grid md:grid-cols-3 gap-2 mt-2 text-neutral-600">
-													<div>Upload date: {ev.uploadDate ? new Date(ev.uploadDate).toLocaleString() : "-"}</div>
+													<div>Upload date: {ev.uploadDate ? new Date(ev.uploadDate).toLocaleString("en-US", { hour12: true }) : "-"}</div>
 													<div>Verification: {toLabel(ev.integrityStatus || "RECEIVED")}</div>
 													<div>Review: {toLabel(ev.reviewStatus || "UNDER_REVIEW")}</div>
 												</div>
