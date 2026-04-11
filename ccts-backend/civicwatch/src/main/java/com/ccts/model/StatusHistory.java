@@ -9,7 +9,11 @@ import java.time.LocalDateTime;
  * Entity for tracking complaint status changes (audit trail)
  */
 @Entity
-@Table(name = "status_history")
+@Table(name = "status_history", indexes = {
+    @Index(name = "idx_status_history_complaint_timestamp", columnList = "complaint_id,timestamp"),
+    @Index(name = "idx_status_history_complaint_visible_timestamp", columnList = "complaint_id,visible_to_user,timestamp"),
+    @Index(name = "idx_status_history_new_status", columnList = "new_status")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

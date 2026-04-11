@@ -1,404 +1,290 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   ArrowUpCircle,
-  ArrowDownCircle,
   Clock,
-  User,
   Building2,
-  Shield,
-  AlertTriangle,
+  User,
   CheckCircle,
-  XCircle,
-  MessageSquare,
-  Calendar,
-  Lock,
-  Unlock,
-  ChevronRight,
   RefreshCw,
-  Search,
-  Filter
+  AlertTriangle
 } from 'lucide-react'
+import { fetchAdminComplaints, updateAdminComplaintStatus } from '../services/adminApi'
+
+const levelConfig = {
+  1: { label: 'Department Officer', sla: '48 hours', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+  2: { label: 'Department Head', sla: '24 hours', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+  3: { label: 'Vigilance Authority', sla: '12 hours', color: 'bg-red-100 text-red-800 border-red-200' }
+}
+
+const getLevelFromComplaint = (item) => {
+  const status = String(item?.status || '')
+  const score = Number(item?.aiSeverityScore || 0)
+
+  if (status === 'INVESTIGATION_STARTED' || status === 'APPROVED' || status === 'RESOLVED' || status === 'REJECTED' || score >= 75) {
+    return 3
+  }
+  if (status === 'UNDER_REVIEW' || status === 'EVIDENCE_VERIFICATION_IN_PROGRESS' || score >= 50) {
+    return 2
+  }
+  return 1
+}
+
+const getEscalationReason = (item) => {
+  if (item?.slaBreached) return 'SLA breached'
+  const score = Number(item?.aiSeverityScore || 0)
+  if (score >= 80) return 'Critical AI severity score'
+  if (score >= 60) return 'High AI severity score'
+  return 'Pending review workload'
+}
+
+const StatusBadge = ({ status }) => {
+  const styles = {
+    SUBMITTED: 'bg-blue-100 text-blue-800',
+    UNDER_REVIEW: 'bg-yellow-100 text-yellow-800',
+    EVIDENCE_VERIFICATION_IN_PROGRESS: 'bg-indigo-100 text-indigo-800',
+    INVESTIGATION_STARTED: 'bg-violet-100 text-violet-800',
+    APPROVED: 'bg-green-100 text-green-800',
+    RESOLVED: 'bg-emerald-100 text-emerald-800',
+    REJECTED: 'bg-red-100 text-red-800'
+  }
+
+  return (
+    <span className={`px-2 py-1 rounded text-xs font-medium ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
+      {String(status || '').replace(/_/g, ' ')}
+    </span>
+  )
+}
 
 const EscalationWorkflow = () => {
-  const [escalationTiers] = useState([
-    { level: 1, name: 'Department Officer', description: 'Initial handling by concerned department', sla: '48 hours', color: 'blue' },
-    { level: 2, name: 'Department Head', description: 'Senior officer review', sla: '24 hours', color: 'yellow' },
-    { level: 3, name: 'Vigilance Authority', description: 'High-level investigation', sla: '12 hours', color: 'red' }
-  ])
+  const [complaints, setComplaints] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [savingId, setSavingId] = useState(null)
+  const [error, setError] = useState('')
 
-  const [escalationCases, setEscalationCases] = useState([
-    {
-      id: 'CCTS-1247',
-      title: 'Bribe demand by traffic officer',
-      currentLevel: 1,
-      status: 'in_progress',
-      assignedTo: 'Officer Sharma',
-      department: 'Police',
-      createdAt: '2024-01-10',
-      escalatedAt: '2024-01-12',
-      history: [
-        { level: 1, from: 'System', to: 'Officer Sharma', reason: 'Auto-assigned', timestamp: '2024-01-10 10:00:00' }
-      ],
-      locked: false,
-      reopenCount: 0
-    },
-    {
-      id: 'CCTS-1245',
-      title: 'Fake certificate racket',
-      currentLevel: 2,
-      status: 'in_progress',
-      assignedTo: 'ASP Mumbai',
-      department: 'Education',
-      createdAt: '2024-01-08',
-      escalatedAt: '2024-01-11',
-      history: [
-        { level: 1, from: 'Officer Sharma', to: 'Dept Head', reason: 'Complexity increased', timestamp: '2024-01-10 14:00:00' },
-        { level: 2, from: 'System', to: 'ASP Mumbai', reason: 'Auto-escalated', timestamp: '2024-01-11 10:00:00' }
-      ],
-      locked: false,
-      reopenCount: 1
-    },
-    {
-      id: 'CCTS-1239',
-      title: 'Tax evasion in contract',
-      currentLevel: 3,
-      status: 'investigating',
-      assignedTo: 'Vigilance Commissioner',
-      department: 'Revenue',
-      createdAt: '2024-01-05',
-      escalatedAt: '2024-01-12',
-      history: [
-        { level: 1, from: 'System', to: 'Officer Kumar', reason: 'Auto-assigned', timestamp: '2024-01-05 09:00:00' },
-        { level: 2, from: 'Officer Kumar', to: 'Dept Head', reason: 'Evidence found', timestamp: '2024-01-08 11:00:00' },
-        { level: 3, from: 'Dept Head', to: 'Vigilance', reason: 'Cross-department involvement', timestamp: '2024-01-12 15:00:00' }
-      ],
-      locked: false,
-      reopenCount: 0
-    },
-    {
-      id: 'CCTS-1225',
-      title: 'Medical supply manipulation',
-      currentLevel: 3,
-      status: 'resolved',
-      assignedTo: 'Vigilance Commissioner',
-      department: 'Health',
-      createdAt: '2024-01-01',
-      escalatedAt: '2024-01-08',
-      resolvedAt: '2024-01-14',
-      history: [
-        { level: 1, from: 'System', to: 'Dr. Patel', reason: 'Auto-assigned', timestamp: '2024-01-01 10:00:00' },
-        { level: 2, from: 'Dr. Patel', to: 'Health Secretary', reason: 'Major irregularity', timestamp: '2024-01-05 14:00:00' },
-        { level: 3, from: 'Health Secretary', to: 'Vigilance', reason: 'Criminal angle detected', timestamp: '2024-01-08 09:00:00' }
-      ],
-      locked: true,
-      reopenCount: 2
+  const loadComplaints = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const data = await fetchAdminComplaints({ page: 0, size: 500 })
+      setComplaints(data?.content || [])
+    } catch (err) {
+      setComplaints([])
+      setError(err?.message || 'Unable to load escalation cases')
+    } finally {
+      setLoading(false)
     }
-  ])
+  }
 
-  const [selectedCase, setSelectedCase] = useState(null)
-  const [showReopenModal, setShowReopenModal] = useState(false)
-  const [reopenReason, setReopenReason] = useState('')
+  useEffect(() => {
+    loadComplaints()
+  }, [])
 
-  const escalateCase = (caseId) => {
-    setEscalationCases(cases => cases.map(c => {
-      if (c.id === caseId && c.currentLevel < 3) {
-        const newLevel = c.currentLevel + 1
-        const tier = escalationTiers.find(t => t.level === newLevel)
-        return {
-          ...c,
-          currentLevel: newLevel,
-          status: 'in_progress',
-          escalatedAt: new Date().toISOString().split('T')[0],
-          history: [...c.history, {
-            level: newLevel,
-            from: c.assignedTo,
-            to: tier.name,
-            reason: 'Manual escalation',
-            timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19)
-          }]
-        }
+  const escalationCases = useMemo(() => {
+    return complaints
+      .filter((item) => item.status !== 'RESOLVED' && item.status !== 'REJECTED')
+      .map((item) => ({ ...item, escalationLevel: getLevelFromComplaint(item) }))
+      .sort((a, b) => (b.aiSeverityScore || 0) - (a.aiSeverityScore || 0))
+  }, [complaints])
+
+  const stats = useMemo(() => {
+    return {
+      active: escalationCases.length,
+      level2: escalationCases.filter((item) => item.escalationLevel === 2).length,
+      level3: escalationCases.filter((item) => item.escalationLevel === 3).length,
+      slaBreached: escalationCases.filter((item) => item.slaBreached).length
+    }
+  }, [escalationCases])
+
+  const escalateCase = async (item) => {
+    const currentStatus = String(item?.status || '')
+    let nextPayload = null
+
+    if (currentStatus === 'SUBMITTED') {
+      nextPayload = {
+        status: 'UNDER_REVIEW',
+        publicMessage: 'Escalated to Department Head for faster review',
+        adminNotes: 'Escalation Level 2 triggered by admin workflow',
+        progressPercentage: Math.max(Number(item.progressPercentage || 0), 35)
       }
-      return c
-    }))
-  }
-
-  const reopenCase = (caseId) => {
-    if (!reopenReason) return
-    setEscalationCases(cases => cases.map(c => {
-      if (c.id === caseId) {
-        return {
-          ...c,
-          status: 'reopened',
-          locked: false,
-          reopenCount: c.reopenCount + 1,
-          history: [...c.history, {
-            level: c.currentLevel,
-            from: 'System',
-            to: c.assignedTo,
-            reason: `Reopened: ${reopenReason}`,
-            timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19)
-          }]
-        }
+    } else if (currentStatus === 'UNDER_REVIEW' || currentStatus === 'EVIDENCE_VERIFICATION_IN_PROGRESS') {
+      nextPayload = {
+        status: 'INVESTIGATION_STARTED',
+        publicMessage: 'Escalated to Vigilance Authority for investigation',
+        adminNotes: 'Escalation Level 3 triggered by admin workflow',
+        progressPercentage: Math.max(Number(item.progressPercentage || 0), 65)
       }
-      return c
-    }))
-    setShowReopenModal(false)
-    setReopenReason('')
+    }
+
+    if (!nextPayload) return
+
+    setSavingId(item.id)
+    try {
+      await updateAdminComplaintStatus(item.id, nextPayload)
+      await loadComplaints()
+    } catch (err) {
+      setError(err?.message || 'Failed to escalate case')
+    } finally {
+      setSavingId(null)
+    }
   }
 
-  const lockCase = (caseId) => {
-    setEscalationCases(cases => cases.map(c => 
-      c.id === caseId ? { ...c, locked: true } : c
-    ))
-  }
-
-  const getStatusBadge = (status, locked) => {
-    if (locked) {
-      return <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs font-medium">Locked</span>
-    }
-    const styles = {
-      in_progress: 'bg-blue-100 text-blue-800',
-      investigating: 'bg-yellow-100 text-yellow-800',
-      resolved: 'bg-green-100 text-green-800',
-      reopened: 'bg-orange-100 text-orange-800'
-    }
-    return (
-      <span className={`px-2 py-1 rounded text-xs font-medium ${styles[status]}`}>
-        {status.replace('_', ' ')}
-      </span>
+  const autoEscalateRiskCases = async () => {
+    const queue = escalationCases.filter((item) =>
+      (item.slaBreached || Number(item.aiSeverityScore || 0) >= 80) &&
+      (item.status === 'SUBMITTED' || item.status === 'UNDER_REVIEW' || item.status === 'EVIDENCE_VERIFICATION_IN_PROGRESS')
     )
+
+    for (const item of queue) {
+      // eslint-disable-next-line no-await-in-loop
+      await escalateCase(item)
+    }
   }
 
-  const getLevelBadge = (level) => {
-    const colors = {
-      1: 'bg-blue-100 text-blue-800 border-blue-300',
-      2: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-      3: 'bg-red-100 text-red-800 border-red-300'
+  const markResolved = async (item) => {
+    setSavingId(item.id)
+    try {
+      await updateAdminComplaintStatus(item.id, {
+        status: 'RESOLVED',
+        publicMessage: 'Complaint resolved after escalation workflow actions',
+        adminNotes: 'Resolved by escalation workflow',
+        progressPercentage: 100
+      })
+      await loadComplaints()
+    } catch (err) {
+      setError(err?.message || 'Failed to resolve case')
+    } finally {
+      setSavingId(null)
     }
+  }
+
+  if (loading) {
     return (
-      <span className={`px-2 py-1 rounded text-xs font-semibold border ${colors[level]}`}>
-        Level {level}
-      </span>
+      <div className="flex items-center justify-center h-96">
+        <RefreshCw className="w-8 h-8 animate-spin text-purple-600" />
+      </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      {/* Tier Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {escalationTiers.map((tier) => (
-          <div key={tier.level} className={`bg-white rounded-xl p-4 shadow-sm border-l-4 ${
-            tier.level === 1 ? 'border-blue-500' : tier.level === 2 ? 'border-yellow-500' : 'border-red-500'
-          }`}>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-gray-800">{tier.name}</h3>
-              <span className={`px-2 py-0.5 rounded text-xs font-medium bg-${tier.color}-100 text-${tier.color}-800`}>
-                Level {tier.level}
-              </span>
-            </div>
-            <p className="text-sm text-gray-500 mb-2">{tier.description}</p>
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <Clock className="w-3 h-3" />
-              <span>SLA: {tier.sla}</span>
-            </div>
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">{error}</div>
+      )}
+
+      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+        <h3 className="text-sm font-semibold text-indigo-900 mb-2">Main work of Escalation Workflow</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-indigo-800">
+          <div>
+            <p className="font-semibold">1. Prioritize risk</p>
+            <p>Uses AI severity score + SLA breach to identify complaints that need urgent attention.</p>
           </div>
-        ))}
+          <div>
+            <p className="font-semibold">2. Route to right authority</p>
+            <p>Moves complaints from officer to department head and then vigilance authority based on level.</p>
+          </div>
+          <div>
+            <p className="font-semibold">3. Prevent delay</p>
+            <p>Auto-escalation pushes critical cases early so they are not stuck in normal queue.</p>
+          </div>
+        </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <ArrowUpCircle className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Active Escalations</p>
-              <p className="text-xl font-bold text-gray-800">{escalationCases.filter(c => c.status !== 'resolved').length}</p>
-            </div>
-          </div>
+          <p className="text-sm text-gray-500">Active Escalations</p>
+          <p className="text-2xl font-bold text-gray-800">{stats.active}</p>
         </div>
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <Clock className="w-5 h-5 text-yellow-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Level 2 Cases</p>
-              <p className="text-xl font-bold text-gray-800">{escalationCases.filter(c => c.currentLevel === 2).length}</p>
-            </div>
-          </div>
+          <p className="text-sm text-gray-500">Level 2 Cases</p>
+          <p className="text-2xl font-bold text-yellow-700">{stats.level2}</p>
         </div>
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <Shield className="w-5 h-5 text-red-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Level 3 Cases</p>
-              <p className="text-xl font-bold text-gray-800">{escalationCases.filter(c => c.currentLevel === 3).length}</p>
-            </div>
-          </div>
+          <p className="text-sm text-gray-500">Level 3 Cases</p>
+          <p className="text-2xl font-bold text-red-700">{stats.level3}</p>
         </div>
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Resolved</p>
-              <p className="text-xl font-bold text-gray-800">{escalationCases.filter(c => c.status === 'resolved').length}</p>
-            </div>
-          </div>
+          <p className="text-sm text-gray-500">SLA Breached</p>
+          <p className="text-2xl font-bold text-orange-700">{stats.slaBreached}</p>
         </div>
       </div>
 
-      {/* Escalation Cases */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b">
-          <h3 className="text-lg font-semibold text-gray-800">Escalation Cases</h3>
-        </div>
-        <div className="divide-y divide-gray-100">
-          {escalationCases.map((caseItem) => (
-            <div key={caseItem.id} className="p-4 hover:bg-gray-50">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-purple-600">{caseItem.id}</span>
-                    {getLevelBadge(caseItem.currentLevel)}
-                    {getStatusBadge(caseItem.status, caseItem.locked)}
-                  </div>
-                  <h4 className="font-medium text-gray-800">{caseItem.title}</h4>
-                </div>
-                <div className="flex items-center gap-2">
-                  {caseItem.currentLevel < 3 && !caseItem.locked && (
-                    <button
-                      onClick={() => escalateCase(caseItem.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600"
-                    >
-                      <ArrowUpCircle className="w-4 h-4" />
-                      Escalate
-                    </button>
-                  )}
-                  {caseItem.status === 'resolved' && caseItem.currentLevel === 3 && (
-                    <button
-                      onClick={() => { setSelectedCase(caseItem); setShowReopenModal(true); }}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600"
-                    >
-                      <Unlock className="w-4 h-4" />
-                      Reopen
-                    </button>
-                  )}
-                  {caseItem.status === 'resolved' && !caseItem.locked && (
-                    <button
-                      onClick={() => lockCase(caseItem.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600"
-                    >
-                      <Lock className="w-4 h-4" />
-                      Lock
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-500">Department</p>
-                  <p className="font-medium flex items-center gap-1">
-                    <Building2 className="w-3 h-3" /> {caseItem.department}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Assigned To</p>
-                  <p className="font-medium flex items-center gap-1">
-                    <User className="w-3 h-3" /> {caseItem.assignedTo}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Escalated At</p>
-                  <p className="font-medium flex items-center gap-1">
-                    <Calendar className="w-3 h-3" /> {caseItem.escalatedAt}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Reopen Count</p>
-                  <p className="font-medium flex items-center gap-1">
-                    <RefreshCw className="w-3 h-3" /> {caseItem.reopenCount} times
-                  </p>
-                </div>
-              </div>
-
-              {/* Escalation Path */}
-              <div className="mt-4">
-                <p className="text-xs text-gray-500 mb-2">Escalation Path:</p>
-                <div className="flex items-center gap-2">
-                  {caseItem.history.map((h, idx) => (
-                    <React.Fragment key={idx}>
-                      <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs">
-                        <span className="font-medium">L{h.level}</span>
-                        <span className="text-gray-500">→</span>
-                      </div>
-                      {idx < caseItem.history.length - 1 && (
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
-                      )}
-                    </React.Fragment>
-                  ))}
-                </div>
-              </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800">Escalation Cases</h3>
+              <p className="text-sm text-gray-500">Cases prioritized by AI severity score, SLA breaches, and status.</p>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Reopen Modal */}
-      {showReopenModal && selectedCase && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md">
-            <div className="px-6 py-4 border-b">
-              <h2 className="text-lg font-bold text-gray-800">Reopen Case</h2>
-              <p className="text-sm text-gray-500">{selectedCase.id}</p>
-            </div>
-            <div className="p-6">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                <div className="flex items-center gap-2 text-yellow-800">
-                  <AlertTriangle className="w-5 h-5" />
-                  <span className="font-medium">Warning</span>
-                </div>
-                <p className="text-sm text-yellow-700 mt-1">
-                  Only Super Admins can reopen resolved cases. This action will be logged.
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Reason for Reopening
-                </label>
-                <textarea
-                  value={reopenReason}
-                  onChange={(e) => setReopenReason(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm"
-                  rows="3"
-                  placeholder="Enter reason for reopening this case..."
-                />
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t flex gap-3">
-              <button
-                onClick={() => { setShowReopenModal(false); setReopenReason(''); }}
-                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => reopenCase(selectedCase.id)}
-                disabled={!reopenReason}
-                className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50"
-              >
-                Reopen Case
-              </button>
-            </div>
+            <button
+              onClick={autoEscalateRiskCases}
+              className="px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700"
+            >
+              Auto Escalate Risk Cases
+            </button>
           </div>
         </div>
-      )}
+
+        {escalationCases.length === 0 ? (
+          <div className="p-6 text-sm text-gray-500">No active escalation cases.</div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {escalationCases.map((item) => {
+              const level = item.escalationLevel
+              const canEscalate = item.status === 'SUBMITTED' || item.status === 'UNDER_REVIEW' || item.status === 'EVIDENCE_VERIFICATION_IN_PROGRESS'
+
+              return (
+                <div key={item.id} className="p-4 hover:bg-gray-50">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-purple-700">{item.trackingNumber || item.id}</span>
+                        <span className={`px-2 py-1 rounded border text-xs font-medium ${levelConfig[level].color}`}>
+                          Level {level} · {levelConfig[level].label}
+                        </span>
+                        <StatusBadge status={item.status} />
+                        {item.slaBreached && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700">
+                            <AlertTriangle className="w-3 h-3" /> SLA Breached
+                          </span>
+                        )}
+                      </div>
+                      <p className="font-medium text-gray-800">{item.title}</p>
+                      <div className="mt-2 grid grid-cols-1 md:grid-cols-4 gap-3 text-sm text-gray-600">
+                        <div className="flex items-center gap-1"><Building2 className="w-3 h-3" /> {item.respondentDepartment || 'Unspecified'}</div>
+                        <div className="flex items-center gap-1"><User className="w-3 h-3" /> {item.userName || '-'}</div>
+                        <div className="flex items-center gap-1"><Clock className="w-3 h-3" /> SLA: {levelConfig[level].sla}</div>
+                        <div>AI Score: <span className="font-semibold">{item.aiSeverityScore || 0}</span></div>
+                      </div>
+                      <p className="mt-2 text-xs text-purple-700 font-medium">Escalation reason: {getEscalationReason(item)}</p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {canEscalate && (
+                        <button
+                          onClick={() => escalateCase(item)}
+                          disabled={savingId === item.id}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 disabled:opacity-60"
+                        >
+                          <ArrowUpCircle className="w-4 h-4" />
+                          Escalate
+                        </button>
+                      )}
+                      <button
+                        onClick={() => markResolved(item)}
+                        disabled={savingId === item.id}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:opacity-60"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Resolve
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

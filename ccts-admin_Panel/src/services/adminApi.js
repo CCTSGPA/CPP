@@ -13,6 +13,28 @@ const getAuthOnlyHeaders = () => {
   }
 }
 
+const handleUnauthorizedResponse = (response, payload, text) => {
+  const status = Number(response?.status)
+  const message = String(payload?.message || text || '').toLowerCase()
+  const isUnauthorized =
+    status === 401 ||
+    status === 403 ||
+    message.includes('unauthorized') ||
+    message.includes('forbidden') ||
+    message.includes('token expired')
+
+  if (!isUnauthorized) {
+    return
+  }
+
+  localStorage.removeItem('adminToken')
+  localStorage.removeItem('adminUser')
+
+  if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+    window.location.assign('/login')
+  }
+}
+
 const parseApiResponse = async (response) => {
   const text = await response.text()
   let payload = null
@@ -23,6 +45,7 @@ const parseApiResponse = async (response) => {
   }
 
   if (!response.ok) {
+    handleUnauthorizedResponse(response, payload, text)
     const errorMessage = payload?.message || text || 'Request failed'
     throw new Error(errorMessage)
   }
@@ -104,8 +127,11 @@ export const uploadEvidenceForUser = async ({ userId, file }) => {
   return parseApiResponse(response)
 }
 
-export const fetchAdminTimeline = async ({ page = 0, size = 500 } = {}) => {
+export const fetchAdminTimeline = async ({ page = 0, size = 500, sort = 'timestamp,desc' } = {}) => {
   const params = new URLSearchParams({ page: String(page), size: String(size) })
+  if (sort) {
+    params.set('sort', sort)
+  }
   const response = await fetch(`/api/v1/admin/timeline?${params.toString()}`, {
     headers: getAuthHeaders()
   })

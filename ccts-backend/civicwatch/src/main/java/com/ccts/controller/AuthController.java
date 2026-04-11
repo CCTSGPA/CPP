@@ -3,7 +3,10 @@ package com.ccts.controller;
 import com.ccts.dto.ApiResponse;
 import com.ccts.dto.AuthRequest;
 import com.ccts.dto.AuthResponse;
+import com.ccts.dto.EmailRequest;
 import com.ccts.dto.OAuth2LoginRequest;
+import com.ccts.dto.SendOtpRequest;
+import com.ccts.dto.VerifyOtpRequest;
 import com.ccts.dto.RegisterRequest;
 import com.ccts.service.AuthService;
 import com.ccts.service.OAuth2Service;
@@ -89,12 +92,8 @@ public class AuthController {
      * POST /api/v1/auth/forgot-password
      */
     @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse<String>> forgotPassword(@RequestBody java.util.Map<String, String> request) {
-        String email = request.get("email");
-        if (email == null || email.isBlank()) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(400, "Email is required"));
-        }
+    public ResponseEntity<ApiResponse<String>> forgotPassword(@Valid @RequestBody EmailRequest request) {
+        String email = request.getEmail();
         
         // For security, don't reveal whether email exists or not
         // Always return success message regardless
@@ -112,9 +111,9 @@ public class AuthController {
      * Body: { "phone": "+917020057494", "email": "user@example.com" }
      */
     @PostMapping("/send-otp")
-    public ResponseEntity<ApiResponse<String>> sendOtp(@RequestBody java.util.Map<String, String> request) {
-        String phone = request.get("phone");
-        String email = request.get("email");
+    public ResponseEntity<ApiResponse<String>> sendOtp(@Valid @RequestBody SendOtpRequest request) {
+        String phone = request.getPhone();
+        String email = request.getEmail();
         if ((phone == null || phone.isBlank()) && (email == null || email.isBlank())) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(400, "Phone or email must be provided"));
@@ -129,9 +128,9 @@ public class AuthController {
      * Body: { "key": "+917020057494 or user@example.com", "code": "123456" }
      */
     @PostMapping("/verify-otp")
-    public ResponseEntity<ApiResponse<Boolean>> verifyOtp(@RequestBody java.util.Map<String, String> request) {
-        String key = request.get("key");
-        String code = request.get("code");
+    public ResponseEntity<ApiResponse<Boolean>> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
+        String key = request.getKey();
+        String code = request.getCode();
         boolean valid = otpService.verifyOtp(key, code);
         return ResponseEntity.ok(ApiResponse.success(valid ? "OTP valid" : "OTP invalid", valid));
     }

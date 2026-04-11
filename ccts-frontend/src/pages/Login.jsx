@@ -8,6 +8,7 @@ import { initiateGoogleLogin, initiateFacebookLogin, initiateAppleLogin, initiat
 import { getTurnstileConfig } from "../services/publicApi";
 import Avatar from "../components/Avatar";
 import TurnstileWidget from "../components/TurnstileWidget";
+import PublicComplaintSearch from "../components/PublicComplaintSearch";
 import { Mail, Lock } from "lucide-react";
 import { FaGoogle, FaMicrosoft, FaFacebookF, FaApple } from "react-icons/fa";
 
@@ -141,6 +142,8 @@ export default function Login() {
           </h2>
           <p className="mt-2 text-neutral-700 text-lg">Sign in to continue</p>
         </div>
+
+        <PublicComplaintSearch className="mt-6" />
 
         <div className="mt-8 space-y-3">
           {socialProviders.map((provider) => {

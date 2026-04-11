@@ -10,10 +10,17 @@ const FACEBOOK_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID || "your_facebook_a
 const MICROSOFT_CLIENT_ID = import.meta.env.VITE_MICROSOFT_CLIENT_ID || "your_microsoft_client_id";
 const APPLE_CLIENT_ID = import.meta.env.VITE_APPLE_CLIENT_ID || "your_apple_client_id";
 
-const GOOGLE_REDIRECT_URI = `${window.location.origin}/auth/google/callback`;
-const FACEBOOK_REDIRECT_URI = `${window.location.origin}/auth/facebook/callback`;
-const MICROSOFT_REDIRECT_URI = `${window.location.origin}/auth/microsoft/callback`;
-const APPLE_REDIRECT_URI = `${window.location.origin}/auth/apple/callback`;
+const OAUTH_REDIRECT_BASE_URL =
+  import.meta.env.VITE_OAUTH_REDIRECT_BASE_URL || window.location.origin;
+
+const GOOGLE_REDIRECT_URI =
+  import.meta.env.VITE_GOOGLE_REDIRECT_URI || `${OAUTH_REDIRECT_BASE_URL}/auth/google/callback`;
+const FACEBOOK_REDIRECT_URI =
+  import.meta.env.VITE_FACEBOOK_REDIRECT_URI || `${OAUTH_REDIRECT_BASE_URL}/auth/facebook/callback`;
+const MICROSOFT_REDIRECT_URI =
+  import.meta.env.VITE_MICROSOFT_REDIRECT_URI || `${OAUTH_REDIRECT_BASE_URL}/auth/microsoft/callback`;
+const APPLE_REDIRECT_URI =
+  import.meta.env.VITE_APPLE_REDIRECT_URI || `${OAUTH_REDIRECT_BASE_URL}/auth/apple/callback`;
 
 /**
  * Initialize Google OAuth flow

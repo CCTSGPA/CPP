@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAdminAuth } from '../context/AdminAuthContext'
 import { Bell, Search, RefreshCw, Calendar, LogOut } from 'lucide-react'
-import { fetchAdminTimeline } from '../services/adminApi'
+import { fetchAdminTimeline, fetchAdminComplaints } from '../services/adminApi'
 
 const pageTitles = {
   '/dashboard': 'Dashboard Overview',
@@ -20,6 +20,7 @@ const pageTitles = {
 const Header = () => {
   const { admin, logout } = useAdminAuth()
   const location = useLocation()
+  const navigate = useNavigate()
   const [currentTime, setCurrentTime] = useState(new Date())
   const [lastRefresh, setLastRefresh] = useState(new Date())
   const [showNotifications, setShowNotifications] = useState(false)
@@ -29,6 +30,8 @@ const Header = () => {
   const [loadingNotifications, setLoadingNotifications] = useState(false)
   const notificationMenuRef = useRef(null)
   const readStorageKey = `adminReadNotifications:${admin?.username || 'default'}`
+  const seenComplaintStorageKey = `adminSeenComplaints:${admin?.username || 'default'}`
+  const [seenComplaintIds, setSeenComplaintIds] = useState([])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -58,8 +61,22 @@ const Header = () => {
   }, [readStorageKey])
 
   useEffect(() => {
+    try {
+      const stored = localStorage.getItem(seenComplaintStorageKey)
+      const parsed = stored ? JSON.parse(stored) : []
+      setSeenComplaintIds(Array.isArray(parsed) ? parsed : [])
+    } catch {
+      setSeenComplaintIds([])
+    }
+  }, [seenComplaintStorageKey])
+
+  useEffect(() => {
     localStorage.setItem(readStorageKey, JSON.stringify(readNotifications))
   }, [readNotifications, readStorageKey])
+
+  useEffect(() => {
+    localStorage.setItem(seenComplaintStorageKey, JSON.stringify(seenComplaintIds))
+  }, [seenComplaintIds, seenComplaintStorageKey])
 
   const handleRefresh = () => {
     setLastRefresh(new Date())
@@ -69,8 +86,39 @@ const Header = () => {
   const loadNotifications = async () => {
     setLoadingNotifications(true)
     try {
-      const timeline = await fetchAdminTimeline({ page: 0, size: 10 })
-      setNotifications(timeline?.content || timeline || [])
+      const [timeline, complaintsPage] = await Promise.all([
+        fetchAdminTimeline({ page: 0, size: 50, sort: 'timestamp,desc' }),
+        fetchAdminComplaints({ page: 0, size: 100 })
+      ])
+
+      const timelineItems = timeline?.content || timeline || []
+      const complaintItems = complaintsPage?.content || []
+      const complaintIds = complaintItems.map((item) => String(item.id)).filter(Boolean)
+
+      let syntheticNewComplaintNotifications = []
+
+      if (seenComplaintIds.length > 0) {
+        syntheticNewComplaintNotifications = complaintItems
+          .filter((item) => item?.id != null && !seenComplaintIds.includes(String(item.id)))
+          .map((item) => ({
+            id: `new-${item.id}`,
+            complaintId: item.id,
+            title: 'New Complaint Submitted',
+            activityType: 'COMPLAINT_SUBMITTED',
+            trackingNumber: item.trackingNumber,
+            publicSummary: `${item.userName || 'Citizen'} filed a new complaint${item.respondentDepartment ? ` for ${item.respondentDepartment}` : ''}.`,
+            timestamp: item.createdAt || new Date().toISOString()
+          }))
+      }
+
+      const combined = [...syntheticNewComplaintNotifications, ...timelineItems].sort((a, b) => {
+        const tsA = new Date(a?.timestamp || 0).getTime()
+        const tsB = new Date(b?.timestamp || 0).getTime()
+        return tsB - tsA
+      })
+
+      setNotifications(combined)
+      setSeenComplaintIds((prev) => Array.from(new Set([...prev, ...complaintIds])))
     } catch {
       setNotifications([])
     } finally {
@@ -82,15 +130,47 @@ const Header = () => {
     loadNotifications()
     const timer = setInterval(() => {
       loadNotifications()
-    }, 60000)
+    }, 20000)
     return () => clearInterval(timer)
   }, [])
+
+  const getNotificationTitle = (item) => {
+    if (item?.activityType === 'COMPLAINT_SUBMITTED') {
+      return `New complaint filed${item?.trackingNumber ? `: ${item.trackingNumber}` : ''}`
+    }
+    if (item?.title) {
+      return item.title
+    }
+    return String(item?.newStatus || '').replace(/_/g, ' ') || 'Status Update'
+  }
+
+  const getNotificationSummary = (item) => {
+    if (item?.activityType === 'COMPLAINT_SUBMITTED') {
+      return item?.publicSummary || 'A new complaint has been submitted and is awaiting review.'
+    }
+    return item?.publicSummary || item?.comment || 'A complaint update was posted.'
+  }
 
   const getNotificationKey = (item) => item.id || `${item.timestamp || 'na'}-${item.newStatus || item.title || 'status'}`
 
   const markNotificationAsRead = (item) => {
     const key = getNotificationKey(item)
     setReadNotifications((prev) => ({ ...prev, [key]: true }))
+  }
+
+  const openNotificationComplaint = (item) => {
+    markNotificationAsRead(item)
+    setShowNotifications(false)
+
+    const complaintId = item?.complaintId
+    const trackingNumber = item?.trackingNumber
+    if (complaintId != null) {
+      navigate(`/complaints?complaintId=${encodeURIComponent(complaintId)}`)
+      return
+    }
+    if (trackingNumber) {
+      navigate(`/complaints?trackingNumber=${encodeURIComponent(trackingNumber)}`)
+    }
   }
 
   const markAllAsRead = () => {
@@ -214,14 +294,14 @@ const Header = () => {
                     return (
                     <button
                       key={key}
-                      onClick={() => markNotificationAsRead(item)}
+                      onClick={() => openNotificationComplaint(item)}
                       className={`w-full text-left px-4 py-3 border-b last:border-b-0 hover:bg-gray-50 ${isRead ? 'bg-white' : 'bg-purple-50/40'}`}
                     >
                       <p className="text-sm font-medium text-gray-800">
-                        {item.title || String(item.newStatus || '').replace(/_/g, ' ') || 'Status Update'}
+                        {getNotificationTitle(item)}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        {item.publicSummary || item.comment || 'A complaint update was posted.'}
+                        {getNotificationSummary(item)}
                       </p>
                       <div className="mt-1 flex items-center justify-between">
                         <p className="text-[11px] text-gray-400">

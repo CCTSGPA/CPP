@@ -16,6 +16,7 @@ import com.ccts.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -122,6 +123,7 @@ public class ComplaintService {
     /**
      * Get all complaints for a user
      */
+    @Transactional(readOnly = true)
     public List<ComplaintResponse> getUserComplaints(User user) {
         return complaintRepository.findByUser(user)
                 .stream()
@@ -132,16 +134,18 @@ public class ComplaintService {
     /**
      * Get paginated user complaints
      */
+    @Transactional(readOnly = true)
     public Page<ComplaintResponse> getUserComplaints(User user, Pageable pageable) {
-        return complaintRepository.findByUser(user, pageable)
-                .map(this::mapToResponse);
+        return complaintRepository.findWithDetailsByUser(user, pageable)
+            .map(this::mapToSummaryResponse);
     }
 
     /**
      * Get complaint by ID
      */
+    @Transactional(readOnly = true)
     public ComplaintResponse getComplaintById(Long id, User user) {
-        Complaint complaint = complaintRepository.findById(id)
+        Complaint complaint = complaintRepository.findWithDetailsById(id)
                 .orElseThrow(() -> CustomException.notFound("Complaint not found"));
 
         // Check if user is the owner or admin
@@ -157,6 +161,7 @@ public class ComplaintService {
      * Update complaint status and send notification
      */
     @Transactional
+    @CacheEvict(value = {"transparencyStats", "geoHeatmap"}, allEntries = true)
     public ComplaintResponse updateComplaintStatus(Long id, ComplaintStatus newStatus, String notes) {
         Complaint complaint = complaintRepository.findById(id)
                 .orElseThrow(() -> CustomException.notFound("Complaint not found"));
@@ -178,15 +183,17 @@ public class ComplaintService {
     /**
      * Get complaint by tracking number
      */
+    @Transactional(readOnly = true)
     public ComplaintResponse getComplaintByTrackingNumber(String trackingNumber) {
-        Complaint complaint = complaintRepository.findByTrackingNumber(trackingNumber)
+        Complaint complaint = complaintRepository.findWithDetailsByTrackingNumber(trackingNumber)
                 .orElseThrow(() -> CustomException.notFound("Complaint not found with tracking number: " + trackingNumber));
 
         return mapToResponse(complaint);
     }
 
+    @Transactional(readOnly = true)
     public ComplaintTrackingDetailsResponse getComplaintTrackingDetails(String trackingNumber) {
-        Complaint complaint = complaintRepository.findByTrackingNumber(trackingNumber)
+        Complaint complaint = complaintRepository.findWithDetailsByTrackingNumber(trackingNumber)
                 .orElseThrow(() -> CustomException.notFound("Complaint not found with tracking number: " + trackingNumber));
 
         ComplaintResponse response = mapToResponse(complaint);
@@ -257,8 +264,9 @@ public class ComplaintService {
     /**
      * Public tracking response without PII exposure
      */
+    @Transactional(readOnly = true)
     public ComplaintResponse getComplaintByTrackingNumberPublic(String trackingNumber) {
-        Complaint complaint = complaintRepository.findByTrackingNumber(trackingNumber)
+        Complaint complaint = complaintRepository.findWithDetailsByTrackingNumber(trackingNumber)
                 .orElseThrow(() -> CustomException.notFound("Complaint not found with tracking number: " + trackingNumber));
 
         ComplaintResponse response = mapToResponse(complaint);
@@ -339,6 +347,51 @@ public class ComplaintService {
                 .assignedOfficerName(complaint.getAssignedOfficer() != null ? complaint.getAssignedOfficer().getName() : null)
                 .timeline(timeline)
                 .activitySummaries(activitySummaries)
+                .evidenceItems(buildEvidenceItems(complaint))
+                .build();
+    }
+
+    private ComplaintResponse mapToSummaryResponse(Complaint complaint) {
+        return ComplaintResponse.builder()
+                .id(complaint.getId())
+                .title(complaint.getTitle())
+                .description(complaint.getDescription())
+                .category(complaint.getCategory())
+                .location(complaint.getLocation())
+                .latitude(complaint.getLatitude())
+                .longitude(complaint.getLongitude())
+                .accuracy(complaint.getAccuracy())
+                .incidentDate(complaint.getIncidentDate())
+                .evidenceUrl(complaint.getEvidenceUrl())
+                .evidenceFileName(complaint.getEvidenceFileName())
+                .evidenceUploadDate(complaint.getEvidenceUploadDate())
+                .evidenceVerificationStatus(complaint.getEvidenceVerificationStatus())
+                .evidenceReviewStatus(complaint.getEvidenceReviewStatus())
+                .evidenceUsedInInvestigation(complaint.getEvidenceUsedInInvestigation())
+                .evidenceSha256(complaint.getEvidenceSha256())
+                .respondentName(complaint.getRespondentName())
+                .respondentDesignation(complaint.getRespondentDesignation())
+                .respondentDepartment(complaint.getRespondentDepartment())
+                .isAnonymous(complaint.getIsAnonymous())
+                .complainantName(complaint.getComplainantName())
+                .complainantEmail(complaint.getComplainantEmail())
+                .complainantPhone(complaint.getComplainantPhone())
+                .status(complaint.getStatus())
+                .trackingNumber(complaint.getTrackingNumber())
+                .progressPercentage(complaint.getProgressPercentage() != null ? complaint.getProgressPercentage() : 0)
+                .createdAt(complaint.getCreatedAt())
+                .updatedAt(complaint.getUpdatedAt())
+                .adminNotes(complaint.getAdminNotes())
+                .aiSeverityScore(complaint.getAiSeverityScore())
+                .aiSummary(complaint.getAiSummary())
+                .slaDeadline(calculateSlaDeadline(complaint))
+                .slaBreached(isSlaBreached(complaint))
+                .escalationFlagged(isSlaBreached(complaint))
+                .userId(complaint.getUser().getId())
+                .userName(complaint.getUser().getName())
+                .userEmail(complaint.getUser().getEmail())
+                .assignedOfficerId(complaint.getAssignedOfficer() != null ? complaint.getAssignedOfficer().getId() : null)
+                .assignedOfficerName(complaint.getAssignedOfficer() != null ? complaint.getAssignedOfficer().getName() : null)
                 .evidenceItems(buildEvidenceItems(complaint))
                 .build();
     }

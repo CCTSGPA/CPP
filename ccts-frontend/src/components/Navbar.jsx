@@ -27,8 +27,16 @@ export default function Navbar() {
   const [deptOpen, setDeptOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [searchTrackingNumber, setSearchTrackingNumber] = useState("");
   const deptRef = useRef(null);
   const deptToggleRef = useRef(null);
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    const value = searchTrackingNumber.trim();
+    if (!value) return;
+    navigate(`/track-complaint?trackingNumber=${encodeURIComponent(value)}`);
+  };
 
   const getUserLabel = () => {
     if (user?.name?.trim()) {
@@ -53,13 +61,14 @@ export default function Navbar() {
 
   useEffect(() => {
     function handleDoc(e) {
-      if (!deptRef.current || !deptToggleRef.current) return;
-      if (
-        deptRef.current.contains(e.target) ||
-        deptToggleRef.current.contains(e.target)
-      )
-        return;
-      setDeptOpen(false);
+      const inDepartmentMenu =
+        deptRef.current && deptToggleRef.current &&
+        (deptRef.current.contains(e.target) || deptToggleRef.current.contains(e.target));
+
+      if (!inDepartmentMenu) {
+        setDeptOpen(false);
+      }
+
       setProfileOpen(false);
     }
 
@@ -111,13 +120,20 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center bg-white/60 rounded-full px-3 py-1 gap-2 text-sm">
-              <Search size={16} />
+            <form
+              onSubmit={handleSearchSubmit}
+              className="hidden sm:flex items-center bg-white/60 rounded-full px-3 py-1 gap-2 text-sm"
+            >
+              <button type="submit" aria-label="Track complaint" className="text-neutral-700">
+                <Search size={16} />
+              </button>
               <input
+                value={searchTrackingNumber}
+                onChange={(event) => setSearchTrackingNumber(event.target.value)}
                 placeholder="Search complaints"
                 className="bg-transparent outline-none text-sm"
               />
-            </div>
+            </form>
 
             <div className="hidden sm:flex items-center gap-3">
               {/* Show avatar when logged in, otherwise show Login / Sign Up */}
@@ -179,13 +195,13 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Desktop secondary menu (hover to reveal) */}
-        <div className="hidden md:block max-h-0 overflow-hidden opacity-0 transition-all duration-200 group-hover:max-h-32 group-hover:opacity-100">
+        {/* Desktop secondary menu */}
+        <div className="hidden md:block">
           <div className="border-t mt-2" />
           <div className="flex items-center justify-between py-2 text-sm">
             <div className="flex items-center gap-4 text-neutral-600">
             {/* Departments dropdown: supports click-to-open (persists) and hover-to-open on desktop */}
-            <div className="relative group" ref={deptToggleRef}>
+            <div className="relative group">
               <button
                 ref={deptToggleRef}
                 onClick={(e) => {
@@ -203,7 +219,7 @@ export default function Navbar() {
                 ref={deptRef}
                 className={`absolute left-0 mt-2 bg-white shadow-soft rounded-lg p-3 w-56 ${
                   deptOpen ? "block" : "hidden"
-                } group-hover:block`}
+                }`}
               >
                 <Link
                   to="/departments#finance"
@@ -285,6 +301,9 @@ export default function Navbar() {
             <Link to="/geo-heatmap" className="hover:text-[#6A0DAD]">
               Heatmap
             </Link>
+            <Link to="/sections" className="hover:text-[#6A0DAD]">
+              Sections
+            </Link>
             </div>
           </div>
         </div>
@@ -356,6 +375,9 @@ export default function Navbar() {
               </Link>
               <Link to="/geo-heatmap" className="text-neutral-700">
                 Heatmap
+              </Link>
+              <Link to="/sections" className="text-neutral-700">
+                Sections
               </Link>
               <div className="pt-2">
                 {isAuthenticated() ? (

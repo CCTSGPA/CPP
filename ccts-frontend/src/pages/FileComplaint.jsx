@@ -338,7 +338,7 @@ export default function FileComplaint() {
           clearTimeout(redirectTimeoutRef.current);
         }
         redirectTimeoutRef.current = setTimeout(() => {
-          navigate("/", { replace: true });
+          navigate("/home", { replace: true });
         }, 1200);
       } else {
         showNotice("error", "Failed to submit complaint: " + (response?.message || "Unknown response"));

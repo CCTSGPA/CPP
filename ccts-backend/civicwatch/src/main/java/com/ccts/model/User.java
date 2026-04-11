@@ -11,7 +11,9 @@ import java.time.LocalDateTime;
  * User entity representing a citizen, officer, or admin in the system.
  */
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+    @Index(name = "idx_user_role", columnList = "role")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

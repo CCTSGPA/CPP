@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   FileText,
   Clock,
@@ -50,6 +50,14 @@ const StatCard = ({ title, value, icon: Icon, change, changeType, color }) => (
   </div>
 )
 
+const getSolvedDate = (complaint) => {
+  const terminalStatuses = new Set(['RESOLVED', 'REJECTED'])
+  if (!terminalStatuses.has(String(complaint?.status || ''))) {
+    return null
+  }
+  return complaint?.solvedAt || complaint?.updatedAt || null
+}
+
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true)
   const [complaints, setComplaints] = useState([])
@@ -63,6 +71,10 @@ const AdminDashboard = () => {
     highSeverity: 0,
     resolutionRate: 0
   })
+  const [resolutionFilters, setResolutionFilters] = useState(() => ({
+    year: String(new Date().getFullYear()),
+    month: 'ALL'
+  }))
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -112,9 +124,64 @@ const AdminDashboard = () => {
     { name: 'Rejected', value: stats.rejected, color: '#ef4444' }
   ]
 
-  const monthlyData = [
-    { month: 'Current', complaints: stats.totalComplaints, resolved: stats.resolved }
-  ]
+  const yearOptions = useMemo(() => {
+    const years = new Set()
+    complaints.forEach((item) => {
+      if (item?.createdAt) years.add(new Date(item.createdAt).getFullYear())
+      const solvedAt = item?.solvedAt || item?.updatedAt
+      if (solvedAt) years.add(new Date(solvedAt).getFullYear())
+    })
+    years.add(new Date().getFullYear())
+    return Array.from(years)
+      .filter((year) => !Number.isNaN(year))
+      .sort((a, b) => b - a)
+  }, [complaints])
+
+  const monthlyData = useMemo(() => {
+    const selectedYear = Number(resolutionFilters.year)
+    const monthShortNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const rows = monthShortNames.map((month, index) => ({
+      month,
+      monthIndex: index,
+      complaints: 0,
+      resolved: 0,
+      resolutionRate: 0
+    }))
+
+    complaints.forEach((item) => {
+      const createdAt = item?.createdAt ? new Date(item.createdAt) : null
+      if (createdAt && createdAt.getFullYear() === selectedYear) {
+        rows[createdAt.getMonth()].complaints += 1
+      }
+
+      const solvedAtRaw = getSolvedDate(item)
+      const solvedAt = solvedAtRaw ? new Date(solvedAtRaw) : null
+      if (solvedAt && solvedAt.getFullYear() === selectedYear) {
+        rows[solvedAt.getMonth()].resolved += 1
+      }
+    })
+
+    rows.forEach((row) => {
+      row.resolutionRate = row.complaints > 0 ? Number(((row.resolved / row.complaints) * 100).toFixed(1)) : 0
+    })
+
+    if (resolutionFilters.month === 'ALL') {
+      return rows
+    }
+
+    const selectedMonthIndex = Number(resolutionFilters.month)
+    return rows.filter((row) => row.monthIndex === selectedMonthIndex)
+  }, [complaints, resolutionFilters])
+
+  const monthResolvedTotal = useMemo(
+    () => monthlyData.reduce((sum, row) => sum + row.resolved, 0),
+    [monthlyData]
+  )
+
+  const monthFiledTotal = useMemo(
+    () => monthlyData.reduce((sum, row) => sum + row.complaints, 0),
+    [monthlyData]
+  )
 
   const departmentMap = complaints.reduce((acc, complaint) => {
     const key = complaint.respondentDepartment || 'Unspecified'
@@ -206,6 +273,50 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800">Month-wise Complaint Resolution</h3>
+            <p className="text-sm text-gray-500">Filter dashboard trends by year and month to review resolution performance.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={resolutionFilters.year}
+              onChange={(e) => setResolutionFilters((prev) => ({ ...prev, year: e.target.value }))}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            >
+              {yearOptions.map((year) => (
+                <option key={year} value={String(year)}>{year}</option>
+              ))}
+            </select>
+            <select
+              value={resolutionFilters.month}
+              onChange={(e) => setResolutionFilters((prev) => ({ ...prev, month: e.target.value }))}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            >
+              <option value="ALL">All Months</option>
+              <option value="0">January</option>
+              <option value="1">February</option>
+              <option value="2">March</option>
+              <option value="3">April</option>
+              <option value="4">May</option>
+              <option value="5">June</option>
+              <option value="6">July</option>
+              <option value="7">August</option>
+              <option value="8">September</option>
+              <option value="9">October</option>
+              <option value="10">November</option>
+              <option value="11">December</option>
+            </select>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-6 text-sm">
+          <div className="text-gray-600">Filed in filter: <span className="font-semibold text-gray-800">{monthFiledTotal}</span></div>
+          <div className="text-gray-600">Resolved in filter: <span className="font-semibold text-green-700">{monthResolvedTotal}</span></div>
+          <div className="text-gray-600">Resolution rate: <span className="font-semibold text-purple-700">{monthFiledTotal > 0 ? ((monthResolvedTotal / monthFiledTotal) * 100).toFixed(1) : '0.0'}%</span></div>
+        </div>
+      </div>
+
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Monthly Trend */}
@@ -222,6 +333,7 @@ const AdminDashboard = () => {
               <Legend />
               <Line type="monotone" dataKey="complaints" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4 }} name="New Complaints" />
               <Line type="monotone" dataKey="resolved" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} name="Resolved" />
+              <Line type="monotone" dataKey="resolutionRate" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 3 }} name="Resolution Rate %" />
             </LineChart>
           </ResponsiveContainer>
         </div>

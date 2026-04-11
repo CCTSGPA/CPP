@@ -55,7 +55,11 @@ export default function DownloadForms() {
         const response = await api.get("/files/my");
         const items = response?.data?.data || [];
         const onlyAdminUploads = items.filter(
-          (item) => String(item.uploadedByRole || "").toUpperCase() === "ADMIN"
+          (item) => {
+            if (item?.sharedByAdmin === true) return true;
+            const role = String(item?.uploadedByRole || "").toUpperCase();
+            return role === "ADMIN" || role.endsWith("_ADMIN") || role.includes("ADMIN");
+          }
         );
         const uniqueEvidence = onlyAdminUploads.filter((item, index, arr) => {
           const key = `${item.id || ""}|${item.downloadUrl || item.fileUrl || ""}|${item.originalFilename || item.storedFilename || ""}`;

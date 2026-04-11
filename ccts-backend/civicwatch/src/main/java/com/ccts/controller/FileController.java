@@ -128,6 +128,7 @@ public class FileController {
 
         for (EvidenceUpload upload : uploads) {
             Map<String, Object> item = new HashMap<>();
+            boolean sharedByAdmin = upload.getUploadedBy() != null && upload.getUploadedBy().getRole() == UserRole.ADMIN;
             item.put("id", upload.getId());
             item.put("originalFilename", upload.getOriginalFilename());
             item.put("storedFilename", upload.getStoredFilename());
@@ -138,6 +139,7 @@ public class FileController {
             item.put("downloadUrl", "/api/v1/files/" + upload.getId() + "/download");
             item.put("uploadedBy", upload.getUploadedBy() != null ? upload.getUploadedBy().getName() : "System");
             item.put("uploadedByRole", upload.getUploadedBy() != null ? upload.getUploadedBy().getRole().name() : "SYSTEM");
+            item.put("sharedByAdmin", sharedByAdmin);
             data.add(item);
         }
 

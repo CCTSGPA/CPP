@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import {
   MapPin,
   RefreshCw,
@@ -9,13 +10,14 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react'
-import { fetchAdminComplaints } from '../services/adminApi'
+import { fetchAdminComplaints, fetchPublicGeoHeatmap } from '../services/adminApi'
 
 const GeoIntelligence = () => {
   const mapRef = useRef(null)
   const [map, setMap] = useState(null)
   const [rawComplaints, setRawComplaints] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [filters, setFilters] = useState({
     department: '',
     category: '',
@@ -31,12 +33,36 @@ const GeoIntelligence = () => {
   useEffect(() => {
     const loadComplaints = async () => {
       setLoading(true)
+      setLoadError('')
       try {
-        const data = await fetchAdminComplaints({ page: 0, size: 500 })
-        const content = (data?.content || []).filter((item) => item.latitude != null && item.longitude != null)
-        setRawComplaints(content)
-      } catch {
+        const [adminData, heatmapData] = await Promise.all([
+          fetchAdminComplaints({ page: 0, size: 500 }),
+          fetchPublicGeoHeatmap()
+        ])
+
+        const adminContent = (adminData?.content || [])
+          .filter((item) => item.latitude != null && item.longitude != null)
+          .map((item) => ({ ...item, complaintCount: 1 }))
+
+        const publicPoints = (heatmapData?.points || [])
+          .filter((point) => point.latitude != null && point.longitude != null)
+          .map((point, idx) => ({
+            id: `public-${idx}`,
+            latitude: point.latitude,
+            longitude: point.longitude,
+            respondentDepartment: point.department || 'Unspecified',
+            category: point.category || 'Other',
+            aiSeverityScore:
+              String(point.severity || '').toLowerCase() === 'high' ? 90 :
+              String(point.severity || '').toLowerCase() === 'medium' ? 60 : 30,
+            complaintCount: Number(point.count) > 0 ? Number(point.count) : 1,
+            createdAt: new Date().toISOString()
+          }))
+
+        setRawComplaints([...adminContent, ...publicPoints])
+      } catch (err) {
         setRawComplaints([])
+        setLoadError(err?.message || 'Unable to load geo intelligence data')
       } finally {
         setLoading(false)
       }
@@ -55,6 +81,7 @@ const GeoIntelligence = () => {
       }).addTo(mapInstance)
 
       setMap(mapInstance)
+      setTimeout(() => mapInstance.invalidateSize(), 0)
     }
 
     return () => {
@@ -96,7 +123,7 @@ const GeoIntelligence = () => {
           lng: item.longitude,
           department: item.respondentDepartment || 'Unspecified',
           category: item.category || 'Other',
-          count: 1,
+          count: Number(item.complaintCount) > 0 ? Number(item.complaintCount) : 1,
           rawSeverity: severityScore,
           severity: severityScore >= 75 ? 'high' : severityScore >= 50 ? 'medium' : 'low'
         }
@@ -119,7 +146,8 @@ const GeoIntelligence = () => {
           rawSeverity: 0
         }
       }
-      acc[key].count += 1
+      const complaintCount = Number(item.complaintCount) > 0 ? Number(item.complaintCount) : 1
+      acc[key].count += complaintCount
       const severityScore = item.aiSeverityScore || 0
       if (severityScore > acc[key].rawSeverity) {
         acc[key].rawSeverity = severityScore
@@ -155,16 +183,26 @@ const GeoIntelligence = () => {
         low: '#10b981'
       }
 
-      const marker = L.circleMarker([complaint.lat, complaint.lng], {
-        radius: viewMode === 'heat'
-          ? Math.max(8, Math.min(20, 8 + (complaint.rawSeverity || 0) / 8))
-          : Math.max(6, Math.min(20, Math.sqrt(complaint.count) * 4)),
-        fillColor: severityColors[complaint.severity],
-        color: viewMode === 'heat' ? 'transparent' : '#fff',
-        weight: viewMode === 'heat' ? 0 : 2,
-        opacity: 1,
-        fillOpacity: viewMode === 'heat' ? 0.35 : 0.7
-      }).addTo(map)
+      let marker
+      if (viewMode === 'heat') {
+        marker = L.circle([complaint.lat, complaint.lng], {
+          radius: Math.max(500, Math.min(6000, complaint.count * 350 + (complaint.rawSeverity || 0) * 30)),
+          fillColor: severityColors[complaint.severity],
+          color: severityColors[complaint.severity],
+          weight: 1,
+          opacity: 0.25,
+          fillOpacity: 0.28
+        }).addTo(map)
+      } else {
+        marker = L.circleMarker([complaint.lat, complaint.lng], {
+          radius: Math.max(7, Math.min(22, Math.sqrt(complaint.count) * 5)),
+          fillColor: severityColors[complaint.severity],
+          color: '#fff',
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.82
+        }).addTo(map)
+      }
 
       marker.bindPopup(`
         <div class="p-2">
@@ -183,6 +221,13 @@ const GeoIntelligence = () => {
         setHoveredLocation(null)
       })
     })
+
+    if (visibleLocations.length > 0) {
+      const bounds = L.latLngBounds(visibleLocations.map((item) => [item.lat, item.lng]))
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [30, 30], maxZoom: 12 })
+      }
+    }
   }, [map, visibleLocations, viewMode])
 
   const departments = [...new Set(rawComplaints.map((item) => item.respondentDepartment || 'Unspecified'))]
@@ -241,6 +286,12 @@ const GeoIntelligence = () => {
 
   return (
     <div className="space-y-6">
+      {loadError && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">
+          {loadError}
+        </div>
+      )}
+
       {/* Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
@@ -425,24 +476,33 @@ const GeoIntelligence = () => {
               )}
 
               {/* Legend */}
-              {showLegend && (
-              <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg p-3 z-[1000]">
-                <p className="text-xs font-semibold text-gray-600 mb-2">Severity</p>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                    <span className="text-xs text-gray-600">High</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                    <span className="text-xs text-gray-600">Medium</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                    <span className="text-xs text-gray-600">Low</span>
-                  </div>
-                </div>
+              <div className="absolute top-4 right-4 bg-black/70 text-white rounded-lg px-3 py-1.5 z-[1200] text-xs font-semibold">
+                {viewMode === 'heat' ? 'Heatmap Mode' : 'Cluster Mode'}
               </div>
+
+              {showLegend && (
+                <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg p-3 z-[1200] w-56">
+                  <p className="text-xs font-semibold text-gray-700 mb-2">Legend ({viewMode === 'heat' ? 'Heatmap' : 'Clusters'})</p>
+                  <div className="space-y-1 mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                      <span className="text-xs text-gray-600">High AI severity</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                      <span className="text-xs text-gray-600">Medium AI severity</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      <span className="text-xs text-gray-600">Low AI severity</span>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-gray-500">
+                    {viewMode === 'heat'
+                      ? 'Larger glow means higher complaint concentration and risk.'
+                      : 'Larger circles mean more complaints in that location cluster.'}
+                  </p>
+                </div>
               )}
             </div>
           </div>

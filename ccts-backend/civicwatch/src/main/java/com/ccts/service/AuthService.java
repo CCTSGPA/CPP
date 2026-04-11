@@ -9,7 +9,6 @@ import com.ccts.model.UserRole;
 import com.ccts.repository.UserRepository;
 import com.ccts.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -31,7 +30,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final ObjectProvider<AuthenticationManager> authenticationManagerProvider;
+    private final AuthenticationManager authenticationManager;
 
     /**
      * Load user by username for Spring Security
@@ -93,14 +92,11 @@ public class AuthService {
      * Login user
      */
     public AuthResponse login(AuthRequest request) {
-        // Find user by email
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> CustomException.unauthorized("Invalid email or password"));
+        authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
-        // Verify password manually
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw CustomException.unauthorized("Invalid email or password");
-        }
+        User user = userRepository.findByEmail(request.getEmail())
+            .orElseThrow(() -> CustomException.unauthorized("Invalid email or password"));
 
         user.setLastLoginAt(LocalDateTime.now());
         User savedUser = userRepository.save(user);

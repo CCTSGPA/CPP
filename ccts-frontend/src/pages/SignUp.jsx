@@ -7,6 +7,7 @@ import { ArrowLeft, Lock, Mail, User } from "lucide-react";
 import { register as registerUser, setAuthToken, setUser } from "../services/authService";
 import { getTurnstileConfig } from "../services/publicApi";
 import TurnstileWidget from "../components/TurnstileWidget";
+import PublicComplaintSearch from "../components/PublicComplaintSearch";
 
 const schema = z
   .object({
@@ -106,6 +107,8 @@ export default function SignUp() {
         <h2 className="mt-6 text-5xl font-bold text-slate-900 text-center leading-tight">
           Create your account
         </h2>
+
+        <PublicComplaintSearch className="mt-5" />
 
         {error && (
           <div className="mt-5 rounded-lg p-3 bg-red-50 border border-red-200 text-red-700 text-sm">

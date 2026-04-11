@@ -11,7 +11,13 @@ import java.time.LocalDateTime;
  * Complaint entity representing a corruption complaint submitted by a citizen.
  */
 @Entity
-@Table(name = "complaints")
+@Table(name = "complaints", indexes = {
+    @Index(name = "idx_complaint_tracking_number", columnList = "tracking_number", unique = true),
+    @Index(name = "idx_complaint_user_id", columnList = "user_id"),
+    @Index(name = "idx_complaint_status", columnList = "status"),
+    @Index(name = "idx_complaint_created_at", columnList = "created_at"),
+    @Index(name = "idx_complaint_assigned_officer", columnList = "assigned_officer_id")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -17,23 +17,25 @@ export default function Home() {
 
   useEffect(() => {
     const fetchStats = async () => {
+      let sharedEvidenceCount = 0;
+
+      if (isAuthenticated()) {
+        try {
+          const filesResponse = await api.get("/files/my");
+          const files = filesResponse?.data?.data || [];
+          sharedEvidenceCount = files.filter((item) => {
+            if (item?.sharedByAdmin === true) return true;
+            const role = String(item?.uploadedByRole || "").toUpperCase();
+            return role === "ADMIN" || role.endsWith("_ADMIN") || role.includes("ADMIN");
+          }).length;
+        } catch {
+          sharedEvidenceCount = 0;
+        }
+      }
+
       try {
         const response = await getTransparencyStats();
-        let sharedEvidenceCount = 0;
-
-        if (isAuthenticated()) {
-          try {
-            const filesResponse = await api.get("/files/my");
-            const files = filesResponse?.data?.data || [];
-            sharedEvidenceCount = files.filter(
-              (item) => String(item.uploadedByRole || "").toUpperCase() === "ADMIN"
-            ).length;
-          } catch {
-            sharedEvidenceCount = 0;
-          }
-        }
-
-        if (response?.status === 200 && response?.data) {
+        if (response?.data) {
           setStats({
             totalComplaintsFiled: response.data.totalComplaintsFiled || 0,
             evidenceUploads: response.data.evidenceUploads || 0,
@@ -46,11 +48,27 @@ export default function Home() {
           }));
         }
       } catch {
-        // Keep zero defaults if the public stats API is temporarily unavailable.
+        // Preserve shared evidence even if the public stats API is temporarily unavailable.
+        setStats((prev) => ({
+          ...prev,
+          sharedEvidence: sharedEvidenceCount,
+        }));
       }
     };
 
     fetchStats();
+
+    const onFocus = () => {
+      fetchStats();
+    };
+
+    const intervalId = window.setInterval(fetchStats, 20000);
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   const mock = [

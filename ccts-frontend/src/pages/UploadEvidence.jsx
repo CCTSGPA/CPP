@@ -54,6 +54,7 @@ export default function UploadEvidence() {
           uploadedAt: item.uploadedAt,
           uploadedBy: item.uploadedBy,
           uploadedByRole: item.uploadedByRole,
+          sharedByAdmin: item.sharedByAdmin,
         })));
       } catch {
         // Do not block upload flow if listing fails.
@@ -144,7 +145,7 @@ export default function UploadEvidence() {
                       >
                         View / Download
                       </button>
-                      {String(file.uploadedByRole || "").toUpperCase() === "ADMIN" && (
+                      {(file.sharedByAdmin === true || String(file.uploadedByRole || "").toUpperCase() === "ADMIN") && (
                         <span className="inline-flex items-center w-fit px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
                           Uploaded by Admin
                         </span>

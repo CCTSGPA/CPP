@@ -17,6 +17,7 @@ import com.ccts.repository.ComplaintRepository;
 import com.ccts.repository.StatusHistoryRepository;
 import com.ccts.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -45,6 +46,7 @@ public class AdminService {
     /**
      * Get all complaints (admin view)
      */
+    @Transactional(readOnly = true)
     public Page<ComplaintResponse> getAllComplaints(Pageable pageable) {
         return complaintRepository.findAllComplaints(pageable)
                 .map(this::mapToResponse);
@@ -53,6 +55,7 @@ public class AdminService {
     /**
      * Get complaints by status
      */
+    @Transactional(readOnly = true)
     public Page<ComplaintResponse> getComplaintsByStatus(ComplaintStatus status, Pageable pageable) {
         return complaintRepository.findByStatus(status, pageable)
                 .map(this::mapToResponse);
@@ -61,12 +64,14 @@ public class AdminService {
     /**
      * Get complaint by ID
      */
+    @Transactional(readOnly = true)
     public ComplaintResponse getComplaintById(Long id) {
         Complaint complaint = complaintRepository.findById(id)
                 .orElseThrow(() -> CustomException.notFound("Complaint not found"));
         return mapToResponse(complaint);
     }
 
+    @Transactional(readOnly = true)
     public Page<AdminUserSummaryResponse> getAllUsers(Pageable pageable) {
         return userRepository.findAll(pageable)
                 .map(user -> AdminUserSummaryResponse.builder()
@@ -81,30 +86,29 @@ public class AdminService {
                         .build());
     }
 
+    @Transactional(readOnly = true)
     public Page<EvidenceMetadataResponse> getEvidenceMetadata(Pageable pageable) {
         return complaintRepository.findByEvidenceUrlIsNotNull(pageable)
                 .map(this::mapToEvidenceMetadataResponse);
     }
 
+    @Transactional(readOnly = true)
     public Page<TimelineEntryResponse> getTimeline(Pageable pageable) {
-        return statusHistoryRepository.findAll(pageable)
+        return statusHistoryRepository.findAllBy(pageable)
                 .map(this::mapToTimelineResponse);
     }
 
+    @Transactional(readOnly = true)
     public Page<TimelineEntryResponse> getTimelineByComplaintId(Long complaintId, Pageable pageable) {
-        Complaint complaint = complaintRepository.findById(complaintId)
-                .orElseThrow(() -> CustomException.notFound("Complaint not found"));
-
-        List<StatusHistory> history = statusHistoryRepository.findByComplaintOrderByTimestampDesc(complaint);
-        List<TimelineEntryResponse> mapped = history.stream().map(this::mapToTimelineResponse).toList();
-
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), mapped.size());
-        List<TimelineEntryResponse> pageContent = start >= mapped.size() ? List.of() : mapped.subList(start, end);
-        return new org.springframework.data.domain.PageImpl<>(pageContent, pageable, mapped.size());
+        if (!complaintRepository.existsById(complaintId)) {
+            throw CustomException.notFound("Complaint not found");
+        }
+        return statusHistoryRepository.findByComplaintIdOrderByTimestampDesc(complaintId, pageable)
+                .map(this::mapToTimelineResponse);
     }
 
-        public AdminUserProfileResponse getUserProfile(Long userId) {
+    @Transactional(readOnly = true)
+    public AdminUserProfileResponse getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> CustomException.notFound("User not found"));
 
@@ -125,7 +129,8 @@ public class AdminService {
             .build();
         }
 
-        public Page<ComplaintResponse> getComplaintsByUserId(Long userId, Pageable pageable) {
+    @Transactional(readOnly = true)
+    public Page<ComplaintResponse> getComplaintsByUserId(Long userId, Pageable pageable) {
         return complaintRepository.findByUserId(userId, pageable)
             .map(this::mapToResponse);
         }
@@ -134,6 +139,7 @@ public class AdminService {
      * Update complaint status
      */
     @Transactional
+    @CacheEvict(value = {"transparencyStats", "geoHeatmap"}, allEntries = true)
     public ComplaintResponse updateComplaintStatus(Long id, StatusUpdateRequest request, User admin) {
         Complaint complaint = complaintRepository.findById(id)
                 .orElseThrow(() -> CustomException.notFound("Complaint not found"));
@@ -195,6 +201,7 @@ public class AdminService {
      * Assign complaint to officer
      */
     @Transactional
+    @CacheEvict(value = {"transparencyStats", "geoHeatmap"}, allEntries = true)
     public ComplaintResponse assignComplaintToOfficer(Long complaintId, Long officerId) {
         Complaint complaint = complaintRepository.findById(complaintId)
                 .orElseThrow(() -> CustomException.notFound("Complaint not found"));
@@ -242,6 +249,7 @@ public class AdminService {
     /**
      * Get statistics
      */
+    @Transactional(readOnly = true)
     public StatsResponse getStats() {
         long totalComplaints = complaintRepository.count();
         long submittedCount = complaintRepository.countByStatus(ComplaintStatus.SUBMITTED);

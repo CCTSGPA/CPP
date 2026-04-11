@@ -1,0 +1,502 @@
+[
+  {
+    "section_name": "Revenue Administration Section",
+    "section_code": "REV_001",
+    "description": "Handles bribery and manipulation in revenue office services.",
+    "complaint_types": [
+      "Bribe for mutation approval",
+      "Delay in income certificate unless paid",
+      "Tampering of revenue entries"
+    ]
+  },
+  {
+    "section_name": "Land Records Section",
+    "section_code": "LAND_002",
+    "description": "Covers corruption in land ownership and map records.",
+    "complaint_types": [
+      "Unauthorized record correction",
+      "Bribe for land map copy",
+      "Suppression of ownership details"
+    ]
+  },
+  {
+    "section_name": "Registration and Stamps Section",
+    "section_code": "REG_003",
+    "description": "Handles corruption during property registration and stamp duty processing.",
+    "complaint_types": [
+      "Undervaluation approval for payment",
+      "Bribe for priority registration slot",
+      "Forgery facilitation by staff"
+    ]
+  },
+  {
+    "section_name": "Police Investigation Section",
+    "section_code": "POL_004",
+    "description": "Tracks bribery or misuse in criminal investigation processes.",
+    "complaint_types": [
+      "Money demand to file FIR",
+      "Evidence suppression for payment",
+      "Illegal detention for extortion"
+    ]
+  },
+  {
+    "section_name": "Traffic Enforcement Section",
+    "section_code": "TRAF_005",
+    "description": "Covers corruption in challans, traffic penalties, and road checks.",
+    "complaint_types": [
+      "Cash settlement without receipt",
+      "Selective penalty waiver for bribe",
+      "Illegal vehicle seizure"
+    ]
+  },
+  {
+    "section_name": "Municipal Building Permit Section",
+    "section_code": "MBLD_006",
+    "description": "Handles corruption in building plan approval and occupancy certification.",
+    "complaint_types": [
+      "Bribe for plan sanction",
+      "Illegal demand for occupancy certificate",
+      "Unauthorized file rejection"
+    ]
+  },
+  {
+    "section_name": "Municipal Sanitation Section",
+    "section_code": "MSAN_007",
+    "description": "Covers corruption in sanitation contracts and waste management services.",
+    "complaint_types": [
+      "Ghost cleaning bills",
+      "Bribe for garbage pickup route",
+      "Favoritism in sanitation contracts"
+    ]
+  },
+  {
+    "section_name": "Water Supply and Sewerage Section",
+    "section_code": "WATR_008",
+    "description": "Handles bribery and misuse in water connections and sewer services.",
+    "complaint_types": [
+      "Payment demand for new connection",
+      "Illegal tanker allocation",
+      "Meter tampering approval"
+    ]
+  },
+  {
+    "section_name": "Public Hospital Services Section",
+    "section_code": "PHOS_009",
+    "description": "Tracks corruption in government hospital admissions and treatment.",
+    "complaint_types": [
+      "Bribe for bed allocation",
+      "Paid queue skipping in OPD",
+      "Diversion of free medicines"
+    ]
+  },
+  {
+    "section_name": "Primary Health Center Section",
+    "section_code": "PHC_010",
+    "description": "Covers corruption in local health center services and supplies.",
+    "complaint_types": [
+      "Fake vaccine stock reporting",
+      "Bribe for maternal benefits",
+      "Absentee staff with marked attendance"
+    ]
+  },
+  {
+    "section_name": "Drug Control Section",
+    "section_code": "DRUG_011",
+    "description": "Handles corruption in medicine licensing and quality enforcement.",
+    "complaint_types": [
+      "Bribe for pharmacy license",
+      "Ignoring counterfeit drug complaints",
+      "Inspection report manipulation"
+    ]
+  },
+  {
+    "section_name": "School Education Section",
+    "section_code": "SCHL_012",
+    "description": "Tracks corruption in school admissions, staffing, and grants.",
+    "complaint_types": [
+      "Donation demand for admission",
+      "Midday meal fund siphoning",
+      "Fake teacher attendance"
+    ]
+  },
+  {
+    "section_name": "Higher Education Section",
+    "section_code": "HEDU_013",
+    "description": "Covers corruption in colleges, scholarships, and exam administration.",
+    "complaint_types": [
+      "Seat allocation for payment",
+      "Bribe for mark revision",
+      "Grant misuse by administration"
+    ]
+  },
+  {
+    "section_name": "Scholarships and Grants Section",
+    "section_code": "SCHG_014",
+    "description": "Handles corruption in educational scholarship and grant distribution.",
+    "complaint_types": [
+      "Beneficiary list manipulation",
+      "Commission demand for disbursement",
+      "Scholarship diversion to fake accounts"
+    ]
+  },
+  {
+    "section_name": "Transport Licensing Section",
+    "section_code": "TLIC_015",
+    "description": "Tracks bribery in driving license and transport permit issuance.",
+    "complaint_types": [
+      "License issuance without test",
+      "Bribe for learner permit",
+      "Agent-officer collusion"
+    ]
+  },
+  {
+    "section_name": "Vehicle Inspection Section",
+    "section_code": "VINS_016",
+    "description": "Covers corruption in fitness checks and roadworthiness certification.",
+    "complaint_types": [
+      "Fitness pass for unsafe vehicle",
+      "Inspection skipping for payment",
+      "False compliance certificate"
+    ]
+  },
+  {
+    "section_name": "Road Transport Permit Section",
+    "section_code": "RTPR_017",
+    "description": "Handles corruption in commercial route and goods permits.",
+    "complaint_types": [
+      "Bribe for route approval",
+      "Permit renewal extortion",
+      "Quota manipulation for operators"
+    ]
+  },
+  {
+    "section_name": "Public Works Contracts Section",
+    "section_code": "PWCT_018",
+    "description": "Tracks corruption in civil works tendering and contract execution.",
+    "complaint_types": [
+      "Bid rigging in tenders",
+      "Kickbacks for work orders",
+      "Inflated measurement books"
+    ]
+  },
+  {
+    "section_name": "Rural Roads Section",
+    "section_code": "RRDS_019",
+    "description": "Covers corruption in village road construction and maintenance.",
+    "complaint_types": [
+      "Substandard material use",
+      "Fake road completion reports",
+      "Bribe for contractor clearance"
+    ]
+  },
+  {
+    "section_name": "Urban Infrastructure Section",
+    "section_code": "UINF_020",
+    "description": "Handles corruption in city infrastructure planning and execution.",
+    "complaint_types": [
+      "Project fund misappropriation",
+      "Illegal utility relocation approvals",
+      "Payment release without milestones"
+    ]
+  },
+  {
+    "section_name": "Electricity Distribution Section",
+    "section_code": "ELCT_021",
+    "description": "Tracks corruption in power connection and outage management.",
+    "complaint_types": [
+      "Bribe for new meter connection",
+      "Preferential outage restoration",
+      "Unauthorized line sanction"
+    ]
+  },
+  {
+    "section_name": "Power Metering Section",
+    "section_code": "PMTR_022",
+    "description": "Covers corruption in billing, metering inspections, and theft cases.",
+    "complaint_types": [
+      "Meter tampering for payment",
+      "Fake high-bill correction charge",
+      "Inspection report suppression"
+    ]
+  },
+  {
+    "section_name": "Banking Services Section",
+    "section_code": "BANK_023",
+    "description": "Handles corruption in public banking operations and service delivery.",
+    "complaint_types": [
+      "Bribe for loan processing",
+      "Unauthorized account freezing",
+      "Priority service sold informally"
+    ]
+  },
+  {
+    "section_name": "Cooperative Banks Section",
+    "section_code": "COBK_024",
+    "description": "Tracks corruption in cooperative lending and deposit management.",
+    "complaint_types": [
+      "Loan favoritism to affiliates",
+      "Deposit withdrawal obstruction",
+      "Audit collusion"
+    ]
+  },
+  {
+    "section_name": "Microfinance Regulation Section",
+    "section_code": "MFIN_025",
+    "description": "Covers corruption in microfinance approvals and borrower protection.",
+    "complaint_types": [
+      "Illegal collection fee demands",
+      "Loan sanction bribes",
+      "Coercive recovery ignored"
+    ]
+  },
+  {
+    "section_name": "Cyber Crime Cell Section",
+    "section_code": "CYBR_026",
+    "description": "Handles corruption in cyber complaint intake and digital evidence handling.",
+    "complaint_types": [
+      "Bribe to prioritize complaint",
+      "Digital evidence tampering",
+      "Case closure without investigation"
+    ]
+  },
+  {
+    "section_name": "Digital Governance Services Section",
+    "section_code": "DGOV_027",
+    "description": "Tracks corruption in e-governance portals and online citizen services.",
+    "complaint_types": [
+      "Portal application manipulation",
+      "Paid queue-jumping for approvals",
+      "Unauthorized profile edits"
+    ]
+  },
+  {
+    "section_name": "Agriculture Subsidy Section",
+    "section_code": "AGSB_028",
+    "description": "Covers corruption in farm subsidy approvals and beneficiary validation.",
+    "complaint_types": [
+      "Fake farmer beneficiary entries",
+      "Commission for subsidy release",
+      "Input subsidy diversion"
+    ]
+  },
+  {
+    "section_name": "Crop Insurance Section",
+    "section_code": "CRIN_029",
+    "description": "Handles corruption in crop loss assessment and insurance payouts.",
+    "complaint_types": [
+      "Loss report manipulation",
+      "Bribe for claim approval",
+      "Payout diversion to non-beneficiaries"
+    ]
+  },
+  {
+    "section_name": "Irrigation Management Section",
+    "section_code": "IRRG_030",
+    "description": "Tracks corruption in canal water allocation and irrigation projects.",
+    "complaint_types": [
+      "Illegal water diversion",
+      "Bribe for irrigation schedule",
+      "Ghost desilting bills"
+    ]
+  },
+  {
+    "section_name": "Food and Civil Supplies Section",
+    "section_code": "FCSP_031",
+    "description": "Covers corruption in ration distribution and food security schemes.",
+    "complaint_types": [
+      "Ration diversion to black market",
+      "Bribe for ration card issue",
+      "Quantity tampering at fair price shops"
+    ]
+  },
+  {
+    "section_name": "Welfare Pensions Section",
+    "section_code": "WPEN_032",
+    "description": "Handles corruption in pension approvals and payment continuity.",
+    "complaint_types": [
+      "Commission for pension sanction",
+      "Stopping pension without cause",
+      "Biometric manipulation"
+    ]
+  },
+  {
+    "section_name": "Housing Schemes Section",
+    "section_code": "HSG_033",
+    "description": "Tracks corruption in affordable housing allotment and subsidies.",
+    "complaint_types": [
+      "Allotment list manipulation",
+      "Bribe for installment release",
+      "Duplicate beneficiary approvals"
+    ]
+  },
+  {
+    "section_name": "Employment Exchange Section",
+    "section_code": "EMEX_034",
+    "description": "Covers corruption in job registration and referral processes.",
+    "complaint_types": [
+      "Paid priority for referrals",
+      "Record tampering for eligibility",
+      "Bribe for interview call letters"
+    ]
+  },
+  {
+    "section_name": "Skill Development Mission Section",
+    "section_code": "SKIL_035",
+    "description": "Handles corruption in training enrollment and certification.",
+    "complaint_types": [
+      "Ghost trainees billing",
+      "Certificate issuance for payment",
+      "Training fund embezzlement"
+    ]
+  },
+  {
+    "section_name": "Labor Inspectorate Section",
+    "section_code": "LABR_036",
+    "description": "Tracks corruption in labor compliance checks and enforcement actions.",
+    "complaint_types": [
+      "Bribe to avoid penalties",
+      "Selective inspections",
+      "Inspection report alteration"
+    ]
+  },
+  {
+    "section_name": "Tax Assessment Section",
+    "section_code": "TAXA_037",
+    "description": "Covers corruption in direct tax assessments and appeals.",
+    "complaint_types": [
+      "Bribe for reduced assessment",
+      "Harassment through false notices",
+      "File movement delays for payment"
+    ]
+  },
+  {
+    "section_name": "GST Enforcement Section",
+    "section_code": "GSTE_038",
+    "description": "Handles corruption in GST audits, refunds, and compliance actions.",
+    "complaint_types": [
+      "Refund release for commission",
+      "Fake mismatch notices",
+      "Audit closure bribe"
+    ]
+  },
+  {
+    "section_name": "Excise and Customs Section",
+    "section_code": "EXCS_039",
+    "description": "Tracks corruption in excise clearances and customs handling.",
+    "complaint_types": [
+      "Illegal clearance payments",
+      "Duty evasion facilitation",
+      "Seizure release for bribe"
+    ]
+  },
+  {
+    "section_name": "Mining and Geology Section",
+    "section_code": "MINE_040",
+    "description": "Covers corruption in mining lease allocation and royalty collection.",
+    "complaint_types": [
+      "Lease allocation favoritism",
+      "Illegal extraction protection",
+      "Royalty record manipulation"
+    ]
+  },
+  {
+    "section_name": "Forest Clearance Section",
+    "section_code": "FRST_041",
+    "description": "Handles corruption in forest permits and land use clearances.",
+    "complaint_types": [
+      "Bribe for tree felling permit",
+      "Illegal land conversion approval",
+      "Compensatory plantation fraud"
+    ]
+  },
+  {
+    "section_name": "Pollution Control Section",
+    "section_code": "POLL_042",
+    "description": "Tracks corruption in environmental compliance and inspections.",
+    "complaint_types": [
+      "Consent certificate for payment",
+      "Ignored emission violations",
+      "Inspection data falsification"
+    ]
+  },
+  {
+    "section_name": "Trade Licensing Section",
+    "section_code": "TRDL_043",
+    "description": "Covers corruption in commercial license issuance and renewals.",
+    "complaint_types": [
+      "Bribe for shop license",
+      "Renewal hold for extortion",
+      "Selective enforcement against businesses"
+    ]
+  },
+  {
+    "section_name": "Fire Safety NOC Section",
+    "section_code": "FIRE_044",
+    "description": "Handles corruption in fire safety inspections and NOC approvals.",
+    "complaint_types": [
+      "NOC approval without inspection",
+      "Bribe for compliance waiver",
+      "False deficiency notices"
+    ]
+  },
+  {
+    "section_name": "Procurement and Tenders Section",
+    "section_code": "PRCT_045",
+    "description": "Tracks corruption in public procurement lifecycle and vendor selection.",
+    "complaint_types": [
+      "Tender specification manipulation",
+      "Kickbacks in vendor awards",
+      "Post-award quantity inflation"
+    ]
+  },
+  {
+    "section_name": "Social Justice Schemes Section",
+    "section_code": "SOJS_046",
+    "description": "Covers corruption in caste and social justice welfare disbursement.",
+    "complaint_types": [
+      "Fake beneficiary approvals",
+      "Bribe for scheme enrollment",
+      "Denial of entitled benefits"
+    ]
+  },
+  {
+    "section_name": "Women and Child Development Section",
+    "section_code": "WCDV_047",
+    "description": "Handles corruption in women and child support programs.",
+    "complaint_types": [
+      "Nutrition fund diversion",
+      "Bribe for shelter admission",
+      "Case suppression in support centers"
+    ]
+  },
+  {
+    "section_name": "Minority Affairs Section",
+    "section_code": "MINA_048",
+    "description": "Tracks corruption in minority welfare grants and scholarships.",
+    "complaint_types": [
+      "Grant release commission",
+      "Beneficiary list tampering",
+      "Discriminatory rejection for payment"
+    ]
+  },
+  {
+    "section_name": "Disaster Relief Distribution Section",
+    "section_code": "DRLF_049",
+    "description": "Covers corruption in emergency aid distribution and compensation.",
+    "complaint_types": [
+      "Relief material diversion",
+      "Compensation claim bribery",
+      "Fake damage assessments"
+    ]
+  },
+  {
+    "section_name": "Public Service Delivery Section",
+    "section_code": "PSRV_050",
+    "description": "Handles corruption in citizen certificates and core public services.",
+    "complaint_types": [
+      "Bribe for birth certificate",
+      "Deliberate service delay",
+      "Unauthorized service denial"
+    ]
+  }
+]

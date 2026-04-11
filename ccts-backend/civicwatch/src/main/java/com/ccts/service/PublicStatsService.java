@@ -7,9 +7,10 @@ import com.ccts.model.ComplaintStatus;
 import com.ccts.model.User;
 import com.ccts.repository.ComplaintRepository;
 import com.ccts.repository.DownloadFormRepository;
-import com.ccts.repository.EvidenceUploadRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,11 +32,12 @@ public class PublicStatsService {
 
     private final ComplaintRepository complaintRepository;
     private final DownloadFormRepository downloadFormRepository;
-    private final EvidenceUploadRepository evidenceUploadRepository;
 
     /**
      * Get anonymized transparency statistics
      */
+    @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "transparencyStats", key = "'global'")
     public TransparencyStatsResponse getTransparencyStats() {
         return buildTransparencyStats(complaintRepository.findAll());
     }
@@ -43,6 +45,8 @@ public class PublicStatsService {
     /**
      * Get transparency statistics scoped to a single user
      */
+    @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "transparencyStats", key = "'user:' + #user.id")
     public TransparencyStatsResponse getTransparencyStatsForUser(User user) {
         return buildTransparencyStats(complaintRepository.findByUser(user));
     }
@@ -133,6 +137,8 @@ public class PublicStatsService {
     /**
      * Get geo heatmap data with optional filters
      */
+    @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "geoHeatmap", key = "T(java.util.Objects).toString(#category,'') + '|' + T(java.util.Objects).toString(#department,'') + '|' + T(java.util.Objects).toString(#dateFrom,'') + '|' + T(java.util.Objects).toString(#dateTo,'')")
     public GeoHeatmapResponse getGeoHeatmap(String category, String department, String dateFrom, String dateTo) {
         List<Complaint> complaints = complaintRepository.findAll();
         

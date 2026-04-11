@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Search,
   Filter,
@@ -71,22 +72,75 @@ const getSolvedDate = (complaint) => {
   return complaint?.solvedAt || complaint?.updatedAt || null
 }
 
+const getPriorityFromScore = (score) => {
+  const value = Number(score || 0)
+  if (value >= 80) return 'CRITICAL'
+  if (value >= 60) return 'HIGH'
+  if (value >= 40) return 'MEDIUM'
+  return 'LOW'
+}
+
+const clampAiScore = (value) => Math.max(0, Math.min(100, Number(value || 0)))
+
+const getAiRecommendation = (complaint, overrideScore = null) => {
+  const score = overrideScore == null ? Number(complaint?.aiSeverityScore || 0) : clampAiScore(overrideScore)
+  const currentProgress = Number(complaint?.progressPercentage || 0)
+
+  if (score >= 80) {
+    return {
+      label: 'Escalate Now',
+      status: 'UNDER_REVIEW',
+      progressPercentage: Math.max(currentProgress, 35),
+      publicMessage: 'AI recommendation applied: critical severity fast-tracked for immediate review.',
+      adminNotes: 'AI score 80+ triggered immediate escalation by admin.',
+      reason: 'Critical risk (AI score 80+)'
+    }
+  }
+
+  if (score >= 60) {
+    return {
+      label: 'Fast-track',
+      status: 'EVIDENCE_VERIFICATION_IN_PROGRESS',
+      progressPercentage: Math.max(currentProgress, 45),
+      publicMessage: 'AI recommendation applied: complaint moved to fast-track evidence verification.',
+      adminNotes: 'AI score 60-79 moved complaint to fast-track queue.',
+      reason: 'High risk (AI score 60-79)'
+    }
+  }
+
+  return {
+    label: 'Standard Queue',
+    status: 'SUBMITTED',
+    progressPercentage: Math.max(currentProgress, 15),
+    publicMessage: 'AI recommendation applied: complaint retained in standard review queue.',
+    adminNotes: 'AI score below 60 kept case in standard processing queue.',
+    reason: 'Normal risk (AI score below 60)'
+  }
+}
+
 const ComplaintManagement = () => {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const autoOpenedRef = useRef('')
   const [complaints, setComplaints] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [selectedComplaint, setSelectedComplaint] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState({
     status: '',
     priority: '',
     department: '',
+    userName: '',
     dateFrom: '',
     dateTo: ''
   })
   const [showFilters, setShowFilters] = useState(false)
+  const [aiActionFilter, setAiActionFilter] = useState('ALL')
+  const [prioritizeByAiScore, setPrioritizeByAiScore] = useState(true)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [selectedUserProfile, setSelectedUserProfile] = useState(null)
   const [complaintTimeline, setComplaintTimeline] = useState([])
+  const [aiScoreOverride, setAiScoreOverride] = useState('')
   const [updateDraft, setUpdateDraft] = useState({
     status: 'SUBMITTED',
     adminNotes: '',
@@ -189,35 +243,107 @@ const ComplaintManagement = () => {
     doc.save(`complaints-export-${fileStamp}.pdf`)
   }
 
-  useEffect(() => {
-    const loadComplaints = async () => {
-      setLoading(true)
-      try {
-        const data = await fetchAdminComplaints({ page: 0, size: 500 })
-        setComplaints(data?.content || [])
-      } catch {
-        setComplaints([])
-      } finally {
-        setLoading(false)
-      }
+  const loadComplaints = async () => {
+    setLoading(true)
+    setLoadError('')
+    try {
+      const data = await fetchAdminComplaints({ page: 0, size: 500 })
+      setComplaints(data?.content || [])
+    } catch (err) {
+      setComplaints([])
+      const message = err?.message || 'Unable to load complaints.'
+      setLoadError(message)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     loadComplaints()
   }, [])
 
+  useEffect(() => {
+    if (loading || complaints.length === 0) return
+
+    const complaintIdParam = searchParams.get('complaintId')
+    const trackingNumberParam = searchParams.get('trackingNumber')
+
+    if (!complaintIdParam && !trackingNumberParam) return
+
+    const queryKey = `${complaintIdParam || ''}|${trackingNumberParam || ''}`
+    if (autoOpenedRef.current === queryKey) return
+
+    const targetComplaint = complaints.find((item) =>
+      (complaintIdParam && String(item.id) === String(complaintIdParam)) ||
+      (trackingNumberParam && String(item.trackingNumber || '').toLowerCase() === String(trackingNumberParam).toLowerCase())
+    )
+
+    if (targetComplaint) {
+      autoOpenedRef.current = queryKey
+      viewComplaintDetails(targetComplaint)
+    }
+  }, [loading, complaints, searchParams])
+
+  const closeDetailModal = () => {
+    setShowDetailModal(false)
+    setSelectedComplaint(null)
+    setSelectedUserProfile(null)
+    setComplaintTimeline([])
+    setAiScoreOverride('')
+
+    if (searchParams.get('complaintId') || searchParams.get('trackingNumber')) {
+      setSearchParams({})
+      autoOpenedRef.current = ''
+    }
+  }
+
   const filteredComplaints = complaints.filter(c => {
+    const normalizedSearch = searchTerm.toLowerCase()
+    const aiScore = Number(c.aiSeverityScore || 0)
+
     if (
       searchTerm &&
       !String(c.trackingNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) &&
-      !String(c.title || '').toLowerCase().includes(searchTerm.toLowerCase())
+      !String(c.title || '').toLowerCase().includes(searchTerm.toLowerCase()) &&
+      !String(c.userName || '').toLowerCase().includes(normalizedSearch)
     ) return false
+
     if (filters.status && c.status !== filters.status) return false
+    if (filters.priority && getPriorityFromScore(c.aiSeverityScore) !== filters.priority) return false
     if (filters.department && c.respondentDepartment !== filters.department) return false
+    if (filters.userName && !String(c.userName || '').toLowerCase().includes(filters.userName.toLowerCase())) return false
+
+    if (aiActionFilter === 'ESCALATE_NOW' && aiScore < 80) return false
+    if (aiActionFilter === 'FAST_TRACK' && (aiScore < 60 || aiScore >= 80)) return false
+    if (aiActionFilter === 'STANDARD' && aiScore >= 60) return false
+
+    if (filters.dateFrom) {
+      const createdAt = c.createdAt ? new Date(c.createdAt) : null
+      const fromDate = new Date(filters.dateFrom)
+      if (!createdAt || Number.isNaN(createdAt.getTime()) || createdAt < fromDate) return false
+    }
+
+    if (filters.dateTo) {
+      const createdAt = c.createdAt ? new Date(c.createdAt) : null
+      const toDate = new Date(filters.dateTo)
+      toDate.setHours(23, 59, 59, 999)
+      if (!createdAt || Number.isNaN(createdAt.getTime()) || createdAt > toDate) return false
+    }
+
     return true
+  }).sort((a, b) => {
+    if (!prioritizeByAiScore) {
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+    }
+
+    const aiDiff = Number(b.aiSeverityScore || 0) - Number(a.aiSeverityScore || 0)
+    if (aiDiff !== 0) return aiDiff
+    return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
   })
 
   const viewComplaintDetails = async (complaint) => {
     setSelectedComplaint(complaint)
+    setAiScoreOverride(complaint?.aiSeverityScore ?? '')
     setUpdateDraft({
       status: complaint.status || 'SUBMITTED',
       adminNotes: '',
@@ -283,6 +409,46 @@ const ComplaintManagement = () => {
     })
   }
 
+  const applyAiRecommendation = async () => {
+    if (!selectedComplaint) return
+
+    const hasOverride = aiScoreOverride !== '' && aiScoreOverride !== null
+    const overrideScore = hasOverride ? clampAiScore(aiScoreOverride) : null
+    const recommendation = getAiRecommendation(selectedComplaint, overrideScore)
+    const noteWithOverride = hasOverride
+      ? `${recommendation.adminNotes} Manual score override applied (${overrideScore}).`
+      : recommendation.adminNotes
+
+    setUpdateDraft((prev) => ({
+      ...prev,
+      status: recommendation.status,
+      progressPercentage: recommendation.progressPercentage,
+      publicMessage: recommendation.publicMessage,
+      adminNotes: noteWithOverride
+    }))
+
+    await updateStatus(selectedComplaint.id, {
+      ...updateDraft,
+      status: recommendation.status,
+      progressPercentage: recommendation.progressPercentage,
+      publicMessage: recommendation.publicMessage,
+      adminNotes: noteWithOverride
+    })
+
+    if (hasOverride) {
+      setSelectedComplaint((prev) => prev ? { ...prev, aiSeverityScore: overrideScore } : prev)
+      setComplaints((prev) => prev.map((item) => (
+        item.id === selectedComplaint.id
+          ? { ...item, aiSeverityScore: overrideScore }
+          : item
+      )))
+    }
+  }
+
+  const hasOverrideValue = aiScoreOverride !== '' && aiScoreOverride !== null
+  const effectiveAiScore = hasOverrideValue ? clampAiScore(aiScoreOverride) : Number(selectedComplaint?.aiSeverityScore || 0)
+  const effectiveRecommendation = selectedComplaint ? getAiRecommendation(selectedComplaint, hasOverrideValue ? effectiveAiScore : null) : null
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -293,6 +459,31 @@ const ComplaintManagement = () => {
 
   return (
     <div className="space-y-6">
+      {loadError && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between gap-3">
+          <div className="text-sm text-red-700">
+            <p className="font-semibold">Failed to load complaints</p>
+            <p>{loadError}</p>
+            {(loadError.toLowerCase().includes('401') || loadError.toLowerCase().includes('403') || loadError.toLowerCase().includes('unauthorized')) && (
+              <p className="mt-1">Your admin session may have expired. Please logout and login again.</p>
+            )}
+          </div>
+          <button
+            onClick={loadComplaints}
+            className="px-3 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <h3 className="text-sm font-semibold text-blue-800 mb-1">Why AI Score is used</h3>
+        <p className="text-sm text-blue-700">
+          AI score helps triage complaints quickly: score 80+ gets immediate escalation, 60-79 gets fast-track review, and below 60 stays in standard queue. This reduces delay for high-risk complaints.
+        </p>
+      </div>
+
       {/* Search and Filter Bar */}
       <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
         <div className="flex flex-wrap items-center gap-4">
@@ -301,7 +492,7 @@ const ComplaintManagement = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by Complaint ID or Anonymous Token..."
+              placeholder="Search by Complaint ID, title, or username..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -337,7 +528,7 @@ const ComplaintManagement = () => {
 
         {/* Filter Options */}
         {showFilters && (
-          <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-1 md:grid-cols-6 gap-4">
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
@@ -359,7 +550,19 @@ const ComplaintManagement = () => {
               className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
             >
               <option value="">All Priority</option>
+              <option value="CRITICAL">Critical (AI score 80+)</option>
+              <option value="HIGH">High (AI score 60-79)</option>
+              <option value="MEDIUM">Medium (AI score 40-59)</option>
+              <option value="LOW">Low (AI score 0-39)</option>
             </select>
+
+            <input
+              type="text"
+              value={filters.userName}
+              onChange={(e) => setFilters({ ...filters, userName: e.target.value })}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              placeholder="Filter by username"
+            />
 
             <select
               value={filters.department}
@@ -387,6 +590,26 @@ const ComplaintManagement = () => {
               className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
               placeholder="To Date"
             />
+
+            <select
+              value={aiActionFilter}
+              onChange={(e) => setAiActionFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            >
+              <option value="ALL">All AI Buckets</option>
+              <option value="ESCALATE_NOW">Escalate Now (80+)</option>
+              <option value="FAST_TRACK">Fast-track (60-79)</option>
+              <option value="STANDARD">Standard Queue (&lt;60)</option>
+            </select>
+
+            <label className="px-3 py-2 border border-gray-200 rounded-lg text-sm flex items-center gap-2 md:col-span-2">
+              <input
+                type="checkbox"
+                checked={prioritizeByAiScore}
+                onChange={(e) => setPrioritizeByAiScore(e.target.checked)}
+              />
+              Prioritize table by highest AI score first
+            </label>
           </div>
         )}
       </div>
@@ -402,6 +625,7 @@ const ComplaintManagement = () => {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Priority</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Department</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">User</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">AI Score</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Submitted Date</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Solved Date</th>
@@ -411,7 +635,9 @@ const ComplaintManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredComplaints.map((complaint) => (
+              {filteredComplaints.map((complaint) => {
+                const complaintAiScore = clampAiScore(complaint.aiSeverityScore)
+                return (
                 <tr key={complaint.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <div>
@@ -426,25 +652,22 @@ const ComplaintManagement = () => {
                     <StatusBadge status={complaint.status} />
                   </td>
                   <td className="px-4 py-3">
-                    <PriorityBadge priority={
-                      complaint.aiSeverityScore >= 80 ? 'CRITICAL' :
-                      complaint.aiSeverityScore >= 60 ? 'HIGH' :
-                      complaint.aiSeverityScore >= 40 ? 'MEDIUM' : 'LOW'
-                    } />
+                    <PriorityBadge priority={getPriorityFromScore(complaintAiScore)} />
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">{complaint.respondentDepartment || '-'}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{complaint.userName || '-'}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
                         <div 
                           className={`h-full rounded-full ${
-                            (complaint.aiSeverityScore || 0) > 75 ? 'bg-red-500' :
-                            (complaint.aiSeverityScore || 0) > 50 ? 'bg-yellow-500' : 'bg-green-500'
+                            complaintAiScore > 75 ? 'bg-red-500' :
+                            complaintAiScore > 50 ? 'bg-yellow-500' : 'bg-green-500'
                           }`}
-                          style={{ width: `${complaint.aiSeverityScore || 0}%` }}
+                          style={{ width: `${complaintAiScore}%` }}
                         ></div>
                       </div>
-                      <span className="text-xs text-gray-500">{complaint.aiSeverityScore || 0}</span>
+                      <span className="text-xs text-gray-500">{complaintAiScore}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">{formatDate(complaint.createdAt)}</td>
@@ -481,10 +704,11 @@ const ComplaintManagement = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
+                )
+              })}
               {filteredComplaints.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="px-4 py-8 text-center text-sm text-gray-500">No complaints found.</td>
+                  <td colSpan={12} className="px-4 py-8 text-center text-sm text-gray-500">No complaints found.</td>
                 </tr>
               )}
             </tbody>
@@ -502,7 +726,7 @@ const ComplaintManagement = () => {
                 <p className="text-sm text-gray-500">User: {selectedComplaint.userName || '-'}</p>
               </div>
               <button
-                onClick={() => setShowDetailModal(false)}
+                onClick={closeDetailModal}
                 className="p-2 hover:bg-gray-100 rounded-lg"
               >
                 <XCircle className="w-6 h-6 text-gray-400" />
@@ -576,10 +800,10 @@ const ComplaintManagement = () => {
                         <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-gradient-to-r from-yellow-500 to-red-500 rounded-full"
-                            style={{ width: `${selectedComplaint.aiSeverityScore || 0}%` }}
+                            style={{ width: `${effectiveAiScore}%` }}
                           ></div>
                         </div>
-                        <span className="text-lg font-bold text-gray-800">{selectedComplaint.aiSeverityScore || 0}</span>
+                        <span className="text-lg font-bold text-gray-800">{effectiveAiScore}</span>
                       </div>
                     </div>
                     <div>
@@ -595,6 +819,13 @@ const ComplaintManagement = () => {
                       <p className="text-sm font-medium text-orange-600">
                         {selectedComplaint.slaDeadline ? new Date(selectedComplaint.slaDeadline).toLocaleString() : '-'}
                       </p>
+                    </div>
+                    <div className="pt-2 border-t border-gray-200">
+                      <p className="text-xs text-gray-500">AI Recommended Action</p>
+                      <p className="text-sm font-semibold text-purple-700">
+                        {effectiveRecommendation?.label}
+                      </p>
+                      <p className="text-xs text-gray-600">{effectiveRecommendation?.reason}</p>
                     </div>
                   </div>
                 </div>
@@ -623,6 +854,30 @@ const ComplaintManagement = () => {
               <div className="border-t pt-6">
                 <h3 className="font-semibold text-gray-800 mb-4">Actions</h3>
                 <div className="grid md:grid-cols-2 gap-3">
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={aiScoreOverride}
+                    onChange={(e) => setAiScoreOverride(e.target.value)}
+                    className="px-4 py-2 border border-gray-200 rounded-lg text-sm"
+                    placeholder="AI score override (0-100)"
+                  />
+
+                  <button
+                    onClick={() => setAiScoreOverride(selectedComplaint.aiSeverityScore ?? '')}
+                    className="px-4 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50"
+                  >
+                    Reset to original score ({selectedComplaint.aiSeverityScore || 0})
+                  </button>
+
+                  <button
+                    onClick={applyAiRecommendation}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 md:col-span-2"
+                  >
+                    Apply AI Recommendation (Score {effectiveAiScore})
+                  </button>
+
                   <select
                     className="px-4 py-2 border border-gray-200 rounded-lg text-sm"
                     value={updateDraft.status}

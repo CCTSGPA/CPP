@@ -79,6 +79,7 @@ const EvidenceControl = () => {
   const [uploadFile, setUploadFile] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [uploadMessage, setUploadMessage] = useState('')
+  const [uploadMessageType, setUploadMessageType] = useState('')
 
   const loadEvidence = async () => {
     setLoading(true)
@@ -144,12 +145,15 @@ const EvidenceControl = () => {
 
   const handleUploadForUser = async () => {
     setUploadMessage('')
+    setUploadMessageType('')
     if (!targetUserId || Number.isNaN(Number(targetUserId))) {
       setUploadMessage('Enter a valid numeric user ID.')
+      setUploadMessageType('error')
       return
     }
     if (!uploadFile) {
       setUploadMessage('Select a PDF or image file to upload.')
+      setUploadMessageType('error')
       return
     }
 
@@ -157,10 +161,12 @@ const EvidenceControl = () => {
     try {
       await uploadEvidenceForUser({ userId: targetUserId, file: uploadFile })
       setUploadMessage('Evidence uploaded successfully for user. User can view it in their Upload Evidence page.')
+      setUploadMessageType('success')
       setUploadFile(null)
       await loadEvidence()
     } catch (err) {
       setUploadMessage(err?.message || 'Failed to upload evidence for user.')
+      setUploadMessageType('error')
     } finally {
       setUploading(false)
     }
@@ -195,8 +201,8 @@ const EvidenceControl = () => {
     <div className="space-y-6">
       <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
         <h3 className="font-semibold text-gray-800 mb-3">Send PDF/Image To User</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-          <div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 items-end">
+          <div className="min-w-0">
             <label className="block text-xs font-medium text-gray-600 mb-1">Select User</label>
             <select
               value={selectedUserId}
@@ -211,7 +217,7 @@ const EvidenceControl = () => {
               ))}
             </select>
           </div>
-          <div>
+          <div className="min-w-0">
             <label className="block text-xs font-medium text-gray-600 mb-1">User ID</label>
             <input
               type="number"
@@ -221,25 +227,33 @@ const EvidenceControl = () => {
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
             />
           </div>
-          <div>
+          <div className="min-w-0">
             <label className="block text-xs font-medium text-gray-600 mb-1">Evidence File</label>
             <input
               type="file"
               accept=".pdf,image/*,.txt"
               onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              className="block w-full max-w-full px-3 py-2 border border-gray-200 rounded-lg text-sm file:mr-3 file:px-3 file:py-1.5 file:rounded file:border-0 file:bg-purple-50 file:text-purple-700"
             />
           </div>
           <button
             type="button"
             onClick={handleUploadForUser}
             disabled={uploading}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-60"
+            className="w-full md:col-span-2 xl:col-span-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-60"
           >
             {uploading ? 'Uploading...' : 'Upload For User'}
           </button>
         </div>
-        {uploadMessage && <p className="mt-2 text-sm text-gray-700">{uploadMessage}</p>}
+        {uploadMessage && (
+          <p
+            className={`mt-2 text-sm ${
+              uploadMessageType === 'success' ? 'text-green-700' : 'text-red-600'
+            }`}
+          >
+            {uploadMessage}
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

@@ -59,4 +59,15 @@ export async function getPublicForms() {
   return response.data;
 }
 
+/**
+ * Track complaint details without authentication.
+ * GET /api/v1/complaints/track/{trackingNumber}/details
+ */
+export async function trackComplaintPublicDetails(trackingNumber) {
+  const response = await axios.get(
+    `/api/v1/complaints/track/${encodeURIComponent(trackingNumber)}/details`
+  );
+  return response.data;
+}
+
 export default publicApi;

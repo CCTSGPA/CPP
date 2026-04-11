@@ -1,11 +1,12 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import MainLayout from "./layouts/MainLayout";
 import Home from "./pages/Home";
 import StartPage from "./pages/StartPage";
 import FileComplaint from "./pages/FileComplaint";
 import ComplaintHistory from "./pages/ComplaintHistory";
+import TrackComplaint from "./pages/TrackComplaint";
 import UploadEvidence from "./pages/UploadEvidence";
 import DownloadForms from "./pages/DownloadForms";
 import Departments from "./pages/Departments";
@@ -30,6 +31,7 @@ import NotFound from "./pages/NotFound";
 import OAuthCallback from "./components/OAuthCallback";
 import TransparencyReport from "./pages/TransparencyReport";
 import GeoHeatmap from "./pages/GeoHeatmap";
+import Sections from "./pages/Sections";
 // ...existing code...
 
 export default function App() {
@@ -41,11 +43,12 @@ export default function App() {
           <Route element={<StartPage />} path="/" />
           <Route element={<MainLayout><Home /></MainLayout>} path="/home" />
           <Route element={<ProtectedRoute><FileComplaint /></ProtectedRoute>} path="/file-complaint" />
-          <Route path="/track-complaint" element={<Navigate to="/complaint-history" replace />} />
+          <Route path="/track-complaint" element={<TrackComplaint />} />
           <Route element={<ProtectedRoute><ComplaintHistory /></ProtectedRoute>} path="/complaint-history" />
           <Route element={<TransparencyReport />} path="/transparency" />
           <Route element={<TransparencyReport />} path="/transparency-report" />
           <Route element={<GeoHeatmap />} path="/geo-heatmap" />
+          <Route element={<Sections />} path="/sections" />
           <Route element={<UploadEvidence />} path="/upload-evidence" />
           <Route element={<DownloadForms />} path="/download-forms" />
           <Route element={<About />} path="/about" />
