@@ -26,11 +26,34 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [deptOpen, setDeptOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [secondaryVisible, setSecondaryVisible] = useState(false);
   const [user, setUser] = useState(null);
   const [searchTrackingNumber, setSearchTrackingNumber] = useState("");
+  const secondaryHideTimeoutRef = useRef(null);
   const deptRef = useRef(null);
   const deptToggleRef = useRef(null);
   const deptHoverTimeoutRef = useRef(null);
+
+  const clearSecondaryHideTimeout = () => {
+    if (secondaryHideTimeoutRef.current) {
+      clearTimeout(secondaryHideTimeoutRef.current);
+      secondaryHideTimeoutRef.current = null;
+    }
+  };
+
+  const showSecondaryMenu = () => {
+    clearSecondaryHideTimeout();
+    setSecondaryVisible(true);
+  };
+
+  const hideSecondaryMenuWithDelay = () => {
+    clearSecondaryHideTimeout();
+    secondaryHideTimeoutRef.current = setTimeout(() => {
+      setSecondaryVisible(false);
+      setDeptOpen(false);
+      secondaryHideTimeoutRef.current = null;
+    }, 380);
+  };
 
   const clearDeptHoverTimeout = () => {
     if (deptHoverTimeoutRef.current) {
@@ -49,7 +72,7 @@ export default function Navbar() {
     deptHoverTimeoutRef.current = setTimeout(() => {
       setDeptOpen(false);
       deptHoverTimeoutRef.current = null;
-    }, 120);
+    }, 280);
   };
 
   const handleSearchSubmit = (event) => {
@@ -110,6 +133,7 @@ export default function Navbar() {
     document.addEventListener("keydown", handleKey);
     window.addEventListener('authChanged', handleAuthChanged);
     return () => {
+      clearSecondaryHideTimeout();
       clearDeptHoverTimeout();
       document.removeEventListener("click", handleDoc);
       document.removeEventListener("keydown", handleKey);
@@ -122,7 +146,11 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-4">
         {/* Top row */}
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-6">
+          <div
+            className="flex items-center gap-6"
+            onMouseEnter={showSecondaryMenu}
+            onMouseLeave={hideSecondaryMenuWithDelay}
+          >
             <Link to="/home" className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-md bg-gradient-to-tr from-[#6A0DAD] to-[#00CED1] text-white flex items-center justify-center">
                 <ShieldCheck size={18} />
@@ -218,7 +246,11 @@ export default function Navbar() {
         </div>
 
         {/* Desktop secondary menu */}
-        <div className="hidden md:block">
+        <div
+          className={secondaryVisible ? "hidden md:block" : "hidden"}
+          onMouseEnter={showSecondaryMenu}
+          onMouseLeave={hideSecondaryMenuWithDelay}
+        >
           <div className="border-t mt-2" />
           <div className="flex items-center justify-between py-2 text-sm">
             <div className="flex items-center gap-4 text-neutral-600">
