@@ -9,7 +9,7 @@ export default function Sections() {
         <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-soft">
           <h1 className="text-3xl font-bold text-slate-900">CCTS Sections</h1>
           <p className="mt-2 text-neutral-600">
-            50 minimal sections for corruption complaint registration and tracking.
+           Top 50 minimal sections for corruption complaint registration and tracking.
           </p>
         </div>
 

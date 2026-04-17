@@ -59,7 +59,7 @@ export default function ComplaintsProcedure() {
                     <li>Witness statements</li>
                   </ul>
                 </li>
-                <li>Maximum file size: 50MB per document</li>
+                <li>Maximum file size: 10MB per document</li>
                 <li>Supported formats: PDF, JPG, PNG, MP4, DOC, XLSX</li>
               </ul>
             </div>
@@ -80,7 +80,7 @@ export default function ComplaintsProcedure() {
           <section>
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Step 5: Complaint Reference Number</h2>
             <p className="bg-green-50 border-l-4 border-green-500 p-4 my-4">
-              Upon successful submission, you will receive a unique Complaint Reference Number via email. Use this number to track your complaint status and for all future communications.
+              Upon successful submission, you will receive a unique Complaint Reference Number via email. Use this number(eg.CCTS-8800C4AD) to track your complaint status and for all future communications.
             </p>
           </section>
 
@@ -99,6 +99,35 @@ export default function ComplaintsProcedure() {
                 </li>
                 <li>Download complaint status reports anytime</li>
               </ul>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Common Legal References</h2>
+            <p className="mb-4">
+              Use the correct Act and Section details when relevant. Example: NC matters can be recorded under Section 155 CrPC.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 my-4">
+              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Act</p>
+                <h3 className="text-lg font-semibold text-gray-900 mt-1">CrPC</h3>
+                <p className="text-sm text-gray-600 mt-2">Section 155</p>
+                <p className="text-sm text-gray-700 mt-1">Non-Cognizable (NC) information</p>
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Act</p>
+                <h3 className="text-lg font-semibold text-gray-900 mt-1">Indian Penal Code (IPC)</h3>
+                <p className="text-sm text-gray-600 mt-2">Section 166</p>
+                <p className="text-sm text-gray-700 mt-1">Public servant disobeying law</p>
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Act</p>
+                <h3 className="text-lg font-semibold text-gray-900 mt-1">Prevention of Corruption Act</h3>
+                <p className="text-sm text-gray-600 mt-2">Section 7</p>
+                <p className="text-sm text-gray-700 mt-1">Public servant taking undue advantage</p>
+              </div>
             </div>
           </section>
 
