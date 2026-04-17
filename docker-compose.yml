@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: ccts_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: corruption_db
+      MYSQL_USER: ccts_user
+      MYSQL_PASSWORD: ccts_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./corruption_db_complaints.sql:/docker-entrypoint-initdb.d/1_complaints.sql
+      - ./corruption_db_download_forms.sql:/docker-entrypoint-initdb.d/2_download_forms.sql
+      - ./corruption_db_status_history.sql:/docker-entrypoint-initdb.d/3_status_history.sql
+      - ./corruption_db_users.sql:/docker-entrypoint-initdb.d/4_users.sql
+    networks:
+      - ccts_network
+
+  backend:
+    build:
+      context: ./ccts-backend/civicwatch
+      dockerfile: Dockerfile
+    container_name: ccts_backend
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: corruption_db
+      DB_USERNAME: ccts_user
+      DB_PASSWORD: ccts_password
+      DB_CREATE_IF_NOT_EXISTS: true
+      DB_SSL_ENABLED: false
+    ports:
+      - "8081:8081"
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      - mysql
+    networks:
+      - ccts_network
+
+  frontend:
+    build:
+      context: ./ccts-frontend
+      dockerfile: Dockerfile
+    container_name: ccts_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - ccts_network
+
+  admin_panel:
+    build:
+      context: ./ccts-admin_Panel
+      dockerfile: Dockerfile
+    container_name: ccts_admin_panel
+    restart: unless-stopped
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+    networks:
+      - ccts_network
+
+volumes:
+  mysql_data:
+  uploads:
+
+networks:
+  ccts_network:
+    driver: bridge
