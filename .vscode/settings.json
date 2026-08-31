@@ -1,0 +1,10 @@
+{
+    "files.exclude": {
+        "**/.kilo/worktrees/**": true
+    },
+    "java.project.excludedFolders": [
+        ".kilo/worktrees"
+    ],
+    "java.source.organizeImports.starThreshold": 99,
+    "java.configuration.updateMar": "none"
+}

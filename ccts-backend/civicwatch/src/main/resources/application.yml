@@ -17,7 +17,7 @@ spring:
   datasource:
     url: jdbc:mysql://${DB_HOST:${SPRING_DATASOURCE_HOST:localhost}}:${DB_PORT:${SPRING_DATASOURCE_PORT:3306}}/${DB_NAME:${SPRING_DATASOURCE_DB:corruption_db}}?createDatabaseIfNotExist=${DB_CREATE_IF_NOT_EXISTS:false}&useSSL=${DB_SSL_ENABLED:false}&requireSSL=${DB_REQUIRE_SSL:false}&verifyServerCertificate=${DB_VERIFY_SERVER_CERT:false}&allowPublicKeyRetrieval=${DB_ALLOW_PUBLIC_KEY_RETRIEVAL:true}&serverTimezone=${DB_SERVER_TIMEZONE:UTC}
     username: ${DB_USERNAME:${SPRING_DATASOURCE_USERNAME:root}}
-    password: ${DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD:}}
+    password: ${DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD:Dhruv@07}}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: ${DB_POOL_MAX_SIZE:20}

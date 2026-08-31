@@ -403,3 +403,134 @@ Your API testing is successful when:
 ---
 
 End of guide.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Ran terminal command: cd "c:\Users\DELL\Documents\CPP\civicwatch_Final_2k26_group-3\ccts-backend\civicwatch" && mvn spring-boot:run
+
+Read , lines 1 to 100
+
+The application started building successfully but encountered a **database connection error**. The MySQL user `ccts_user` is either not created or the credentials are incorrect.
+
+Let me check the database setup scripts and configuration: 
+
+Read 
+
+Searched for files matching `**/application*.properties`, 1 match
+
+Searched for files matching `**/application*.yml`, 1 match
+
+Read , lines 1 to 100
+
+Read , lines 1 to 50
+
+I can see the issue. The application is configured to connect with user `ccts_user`, but the database either isn't set up or the user doesn't exist. Let me check the `.env` file: 
+
+Read 
+
+## Issue Found & Solution
+
+**Problem:** The `.env` file specifies `ccts_user` with password `ccts_password`, but the database user hasn't been created yet.
+
+**Solution:** Stop the current process and run the database setup script. 
+
+Killed terminal
+
+Now let me check the setup script: 
+
+Read , lines 1 to 20
+
+Read 
+
+Perfect! I found two ways to run this project. Let me ask which you prefer: 
+
+Analyzing your answers...
+
+## Using Local MySQL Setup
+
+You'll need to:
+1. Ensure MySQL 8.0+ is running locally
+2. Run the database setup script
+3. Run the Spring Boot application
+
+Let me run the setup script for you:  
+
+Ran terminal command: setup_database.bat
+
+The setup script needs your MySQL root password. What's your MySQL root password? (If you don't have one set, just press Enter): 
+
+Analyzing your answers...
+
+Sent `Dhruv@07` to terminal
+
+Let me run the database setup directly with MySQL:  
+
+Ran terminal command: mysql -u root -pDhruv@07 < "c:\Users\DELL\Documents\CPP\civicwatch_Final_2k26_group-3\setup_db.sql"
+
+Excellent! Database setup is complete. Now let's run the Spring Boot application:  
+
+Sent `exit` to terminal
+
+Now let's start the Spring Boot application:   
+
+Ran terminal command: cd "c:\Users\DELL\Documents\CPP\civicwatch_Final_2k26_group-3\ccts-backend\civicwatch" && mvn spring-boot:run
+
+Read 
+
+## ✅ Success! Application is Running
+
+Your Spring Boot project is now **running successfully** on **port 8081**! 
+
+### Key Information:
+- **Status**: ✅ Started successfully
+- **Port**: 8081
+- **Database**: Connected to `corruption_db` with user `ccts_user`
+- **Framework**: Spring Boot 3.5.0 with Tomcat 10.1.41
+- **Java**: JDK 21
+
+### What was done:
+1. ✅ Fixed duplicate launch configurations in `launch.json`
+2. ✅ Set up MySQL database (`corruption_db`) with user `ccts_user`
+3. ✅ Imported all database schemas (users, complaints, forms, status history)
+4. ✅ Started Spring Boot application successfully
+
+### Access Your Application:
+- **Backend API**: http://localhost:8081
+- **Actuator**: http://localhost:8081/actuator
+
+The terminal is now running the Spring Boot application. You can stop it with `Ctrl+C` when needed. All logs will appear in this terminal session.

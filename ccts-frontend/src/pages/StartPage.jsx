@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ShieldCheck, Clock3, Gavel } from "lucide-react";
+import PublicComplaintSearch from "../components/PublicComplaintSearch";
 
 export default function StartPage() {
   return (
@@ -46,6 +47,8 @@ export default function StartPage() {
             <p className="mt-1 text-white/85 text-base">Guidance and support for complainants and whistleblowers</p>
           </div>
         </div>
+
+        <PublicComplaintSearch className="mt-8 max-w-2xl mx-auto bg-white/90 border-white/50 shadow-lg" />
 
         <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto">
           <Link
